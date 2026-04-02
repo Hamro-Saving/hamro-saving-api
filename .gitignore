@@ -426,3 +426,6 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+
+# Ignore bin directories with backslash paths (Windows artifacts)
+bin\*
