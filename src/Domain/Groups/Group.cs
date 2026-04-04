@@ -25,7 +25,7 @@ public sealed class Group : Entity
     {
         var group = new Group
         {
-            Id = Guid.NewGuid(),
+            Id = Guid.CreateVersion7(),
             Name = name,
             Code = code.ToUpperInvariant(),
             Description = description,

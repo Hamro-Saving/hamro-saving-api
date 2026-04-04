@@ -24,7 +24,7 @@ public sealed class NonMember : Entity
     {
         return new NonMember
         {
-            Id = Guid.NewGuid(),
+            Id = Guid.CreateVersion7(),
             FullName = fullName,
             Email = email,
             Phone = phone,

@@ -26,7 +26,7 @@ public sealed class Expense : Entity
     {
         return new Expense
         {
-            Id = Guid.NewGuid(),
+            Id = Guid.CreateVersion7(),
             GroupId = groupId,
             Amount = amount,
             Category = category,

@@ -32,7 +32,7 @@ public sealed class FixedDeposit : Entity
     {
         return new FixedDeposit
         {
-            Id = Guid.NewGuid(),
+            Id = Guid.CreateVersion7(),
             GroupId = groupId,
             InstitutionName = institutionName,
             Amount = amount,

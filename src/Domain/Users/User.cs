@@ -28,7 +28,7 @@ public sealed class User : Entity
     {
         var user = new User
         {
-            Id = Guid.NewGuid(),
+            Id = Guid.CreateVersion7(),
             Email = email.ToLowerInvariant(),
             PasswordHash = passwordHash,
             FirstName = firstName,

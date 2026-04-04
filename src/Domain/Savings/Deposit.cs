@@ -32,7 +32,7 @@ public sealed class Deposit : Entity
     {
         return new Deposit
         {
-            Id = Guid.NewGuid(),
+            Id = Guid.CreateVersion7(),
             MemberId = memberId,
             GroupId = groupId,
             Amount = amount,

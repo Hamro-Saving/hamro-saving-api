@@ -32,7 +32,7 @@ public sealed class LoanPayment : Entity
     {
         return new LoanPayment
         {
-            Id = Guid.NewGuid(),
+            Id = Guid.CreateVersion7(),
             LoanId = loanId,
             Amount = amount,
             PrincipalAmount = principalAmount,

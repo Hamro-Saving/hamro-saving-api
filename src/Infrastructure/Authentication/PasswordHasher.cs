@@ -5,15 +5,15 @@ namespace HamroSavings.Infrastructure.Authentication;
 
 internal sealed class PasswordHasher : IPasswordHasher
 {
-    private const int SaltSize = 16;
-    private const int HashSize = 32;
-    private const int Iterations = 100_000;
-    private static readonly HashAlgorithmName Algorithm = HashAlgorithmName.SHA256;
+    private const int saltSize = 16;
+    private const int hashSize = 32;
+    private const int iterations = 100_000;
+    private static readonly HashAlgorithmName algorithm = HashAlgorithmName.SHA256;
 
     public string Hash(string password)
     {
-        var salt = RandomNumberGenerator.GetBytes(SaltSize);
-        var hash = Rfc2898DeriveBytes.Pbkdf2(password, salt, Iterations, Algorithm, HashSize);
+        var salt = RandomNumberGenerator.GetBytes(saltSize);
+        var hash = Rfc2898DeriveBytes.Pbkdf2(password, salt, iterations, algorithm, hashSize);
 
         return $"{Convert.ToBase64String(salt)}.{Convert.ToBase64String(hash)}";
     }
@@ -26,7 +26,7 @@ internal sealed class PasswordHasher : IPasswordHasher
         var salt = Convert.FromBase64String(parts[0]);
         var hash = Convert.FromBase64String(parts[1]);
 
-        var computedHash = Rfc2898DeriveBytes.Pbkdf2(password, salt, Iterations, Algorithm, HashSize);
+        var computedHash = Rfc2898DeriveBytes.Pbkdf2(password, salt, iterations, algorithm, hashSize);
 
         return CryptographicOperations.FixedTimeEquals(hash, computedHash);
     }
