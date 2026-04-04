@@ -1,6 +1,7 @@
 using HamroSavings.Application.Abstractions.Authentication;
 using HamroSavings.Application.Abstractions.Data;
 using HamroSavings.Application.Abstractions.Messaging;
+using HamroSavings.Application.Finance.CreateExpense;
 using HamroSavings.Domain.Finance;
 using HamroSavings.Domain.Groups;
 using HamroSavings.Domain.Users;
