@@ -34,7 +34,7 @@ public sealed class Loan : Entity
     {
         var loan = new Loan
         {
-            Id = Guid.NewGuid(),
+            Id = Guid.CreateVersion7(),
             BorrowerId = borrowerId,
             BorrowerType = borrowerType,
             GroupId = groupId,
