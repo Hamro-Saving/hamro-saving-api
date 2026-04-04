@@ -22,6 +22,13 @@ internal sealed class CreateLoanCommandHandler(
             return Result.Failure<Guid>(UserErrors.NotInGroup);
         }
 
+        // Members (non-admin) can only apply for themselves
+        if (!userContext.IsAdmin && !userContext.IsSuperAdmin)
+        {
+            if (command.BorrowerType != "Member" || command.BorrowerId != userContext.UserId)
+                return Result.Failure<Guid>(UserErrors.Unauthorized);
+        }
+
         var group = await dbContext.Groups
             .FirstOrDefaultAsync(g => g.Id == command.GroupId, cancellationToken);
 
@@ -39,7 +46,9 @@ internal sealed class CreateLoanCommandHandler(
             {
                 return Result.Failure<Guid>(UserErrors.NotFound(command.BorrowerId));
             }
-            interestRate = command.InterestRate ?? group.MemberInterestRate;
+            // Only admins may override the group default rate
+            var effectiveRate = (userContext.IsAdmin || userContext.IsSuperAdmin) ? command.InterestRate : null;
+            interestRate = effectiveRate ?? group.MemberInterestRate;
         }
         else if (command.BorrowerType == "NonMember")
         {
@@ -49,7 +58,9 @@ internal sealed class CreateLoanCommandHandler(
             {
                 return Result.Failure<Guid>(NonMemberErrors.NotFound(command.BorrowerId));
             }
-            interestRate = command.InterestRate ?? group.NonMemberInterestRate;
+            // Only admins may override the group default rate
+            var effectiveRate = (userContext.IsAdmin || userContext.IsSuperAdmin) ? command.InterestRate : null;
+            interestRate = effectiveRate ?? group.NonMemberInterestRate;
         }
         else
         {
@@ -64,8 +75,7 @@ internal sealed class CreateLoanCommandHandler(
             interestRate,
             command.StartDate,
             command.DueDate,
-            command.Notes,
-            userContext.UserId);
+            command.Notes);
 
         dbContext.Loans.Add(loan);
         await dbContext.SaveChangesAsync(cancellationToken);

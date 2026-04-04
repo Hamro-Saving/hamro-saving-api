@@ -27,4 +27,4 @@ public sealed class UpdateLoan : IEndpoint
     }
 }
 
-public sealed record UpdateLoanRequest(decimal Amount, decimal InterestRate, DateTime? DueDate, string? Notes);
+public sealed record UpdateLoanRequest(decimal Amount, decimal? InterestRate, DateTime? DueDate, string? Notes);

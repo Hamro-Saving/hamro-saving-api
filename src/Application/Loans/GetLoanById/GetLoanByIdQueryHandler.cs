@@ -48,6 +48,35 @@ internal sealed class GetLoanByIdQueryHandler(
             borrowerName = nonMember?.FullName ?? "Unknown";
         }
 
+        var approvalCount = await dbContext.LoanApprovals
+            .CountAsync(a => a.LoanId == loan.Id, cancellationToken);
+
+        var hasCurrentUserApproved = await dbContext.LoanApprovals
+            .AnyAsync(a => a.LoanId == loan.Id && a.ApproverId == userContext.UserId, cancellationToken);
+
+        var approvals = await dbContext.LoanApprovals
+            .Where(a => a.LoanId == loan.Id)
+            .Select(a => new { a.ApproverId, a.ApprovedAt })
+            .ToListAsync(cancellationToken);
+
+        var approverIds = approvals.Select(a => a.ApproverId).ToList();
+        var approverNames = await dbContext.Users
+            .Where(u => approverIds.Contains(u.Id))
+            .Select(u => new { u.Id, Name = u.FirstName + " " + u.LastName })
+            .ToListAsync(cancellationToken);
+        var approverDict = approverNames.ToDictionary(u => u.Id, u => u.Name);
+
+        var approverList = approvals
+            .Select(a => new ApproverInfo(a.ApproverId, approverDict.GetValueOrDefault(a.ApproverId, "Unknown"), a.ApprovedAt))
+            .ToList();
+
+        var totalGroupMembers = await dbContext.Users
+            .CountAsync(u => u.GroupId == loan.GroupId && u.Role == Domain.Users.UserRole.Member, cancellationToken);
+
+        var requiredApprovals = (int)Math.Ceiling(totalGroupMembers / 2.0);
+        var elapsedDays = loan.Status == LoanStatus.Active ? (DateTime.UtcNow - loan.StartDate).Days : 0;
+        var accruedInterest = Math.Round(loan.Amount * (loan.InterestRate / 100m) * elapsedDays / 365m, 2);
+
         return Result.Success(new LoanResponse(
             loan.Id,
             loan.BorrowerId,
@@ -58,11 +87,16 @@ internal sealed class GetLoanByIdQueryHandler(
             loan.InterestRate,
             loan.TotalInterest,
             loan.TotalDue,
+            accruedInterest,
             loan.StartDate,
             loan.DueDate,
             loan.Status,
             loan.Notes,
             loan.ApprovedById,
+            approvalCount,
+            requiredApprovals,
+            hasCurrentUserApproved,
+            approverList,
             loan.CreatedAt));
     }
 }

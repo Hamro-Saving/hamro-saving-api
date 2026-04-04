@@ -29,8 +29,7 @@ public sealed class Loan : Entity
         decimal interestRate,
         DateTime startDate,
         DateTime? dueDate,
-        string? notes,
-        Guid? approvedById)
+        string? notes)
     {
         var loan = new Loan
         {
@@ -42,9 +41,9 @@ public sealed class Loan : Entity
             InterestRate = interestRate,
             StartDate = startDate,
             DueDate = dueDate,
-            Status = LoanStatus.Active,
+            Status = LoanStatus.Pending,
             Notes = notes,
-            ApprovedById = approvedById,
+            ApprovedById = null,
             CreatedAt = DateTime.UtcNow
         };
         loan.Raise(new LoanCreatedDomainEvent(loan.Id, loan.BorrowerId, loan.GroupId));
@@ -54,11 +53,26 @@ public sealed class Loan : Entity
     public void MarkAsPaidOff() => Status = LoanStatus.PaidOff;
     public void MarkAsOverdue() => Status = LoanStatus.Overdue;
     public void Cancel() => Status = LoanStatus.Cancelled;
-    public void Approve(Guid approvedById) => ApprovedById = approvedById;
+
+    public Result ApproveLoan()
+    {
+        if (Status != LoanStatus.Pending) return Result.Failure(LoanErrors.NotPending);
+        Status = LoanStatus.Approved;
+        return Result.Success();
+    }
+
+    public Result Verify(Guid verifiedById)
+    {
+        if (Status != LoanStatus.Approved) return Result.Failure(LoanErrors.NotApproved);
+        Status = LoanStatus.Active;
+        ApprovedById = verifiedById;
+        Raise(new LoanCreatedDomainEvent(Id, BorrowerId, GroupId));
+        return Result.Success();
+    }
 
     public Result Update(decimal amount, decimal interestRate, DateTime? dueDate, string? notes)
     {
-        if (ApprovedById is not null) return Result.Failure(LoanErrors.CannotModifyApproved);
+        if (Status != LoanStatus.Pending) return Result.Failure(LoanErrors.CannotModifyApproved);
         Amount = amount;
         InterestRate = interestRate;
         DueDate = dueDate;

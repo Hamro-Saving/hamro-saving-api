@@ -2,8 +2,10 @@ namespace HamroSavings.Domain.Loans;
 
 public enum LoanStatus
 {
-    Active = 0,
-    PaidOff = 1,
-    Overdue = 2,
-    Cancelled = 3
+    Pending = 0,
+    Approved = 1,
+    Active = 2,
+    PaidOff = 3,
+    Overdue = 4,
+    Cancelled = 5
 }

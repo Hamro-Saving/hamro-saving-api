@@ -15,6 +15,9 @@ internal sealed class RecordLoanPaymentCommandHandler(
 {
     public async Task<Result<Guid>> Handle(RecordLoanPaymentCommand command, CancellationToken cancellationToken = default)
     {
+        if (!userContext.IsAdmin && !userContext.IsSuperAdmin)
+            return Result.Failure<Guid>(UserErrors.Unauthorized);
+
         if (!userContext.IsSuperAdmin && userContext.GroupId != command.GroupId)
         {
             return Result.Failure<Guid>(UserErrors.NotInGroup);

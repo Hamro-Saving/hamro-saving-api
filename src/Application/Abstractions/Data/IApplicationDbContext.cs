@@ -16,6 +16,7 @@ public interface IApplicationDbContext
     DbSet<Deposit> Deposits { get; }
     DbSet<Loan> Loans { get; }
     DbSet<LoanPayment> LoanPayments { get; }
+    DbSet<LoanApproval> LoanApprovals { get; }
     DbSet<Expense> Expenses { get; }
     DbSet<FixedDeposit> FixedDeposits { get; }
 
