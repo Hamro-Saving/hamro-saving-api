@@ -10,6 +10,7 @@ public sealed class Deposit : Entity
     public decimal Amount { get; private set; }
     public int DepositMonth { get; private set; }
     public int DepositYear { get; private set; }
+    public DateOnly DepositDate { get; private set; }
     public DepositType Type { get; private set; }
     public string? Notes { get; private set; }
     public bool IsVerified { get; private set; }
@@ -26,6 +27,7 @@ public sealed class Deposit : Entity
         decimal amount,
         int month,
         int year,
+        DateOnly depositDate,
         DepositType type,
         string? notes,
         Guid createdById)
@@ -38,6 +40,7 @@ public sealed class Deposit : Entity
             Amount = amount,
             DepositMonth = month,
             DepositYear = year,
+            DepositDate = depositDate,
             Type = type,
             Notes = notes,
             IsVerified = false,

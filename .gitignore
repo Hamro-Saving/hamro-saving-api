@@ -429,10 +429,8 @@ FodyWeavers.xsd
 
 # Ignore bin directories with backslash paths (Windows artifacts)
 bin\*
-
-# Ignore Windows-style backslash bin/obj artifacts
-**/bin\*
-**/obj\*
+**/bin\\*
+**/obj\\*
 
 # macOS
 .DS_Store

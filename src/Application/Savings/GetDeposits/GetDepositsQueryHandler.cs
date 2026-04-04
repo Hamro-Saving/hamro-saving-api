@@ -49,23 +49,41 @@ internal sealed class GetDepositsQueryHandler(
             .Join(dbContext.Users,
                 d => d.MemberId,
                 u => u.Id,
-                (d, u) => new DepositResponse(
+                (d, u) => new
+                {
                     d.Id,
                     d.MemberId,
-                    u.FirstName + " " + u.LastName,
+                    MemberName = u.FirstName + " " + u.LastName,
                     d.GroupId,
                     d.Amount,
                     d.DepositMonth,
                     d.DepositYear,
+                    d.DepositDate,
                     d.Type,
                     d.Notes,
                     d.IsVerified,
                     d.VerifiedById,
                     d.VerifiedAt,
-                    d.CreatedAt))
+                    d.CreatedAt
+                })
             .OrderByDescending(d => d.DepositYear)
             .ThenByDescending(d => d.DepositMonth)
             .ThenBy(d => d.MemberName)
+            .Select(d => new DepositResponse(
+                d.Id,
+                d.MemberId,
+                d.MemberName,
+                d.GroupId,
+                d.Amount,
+                d.DepositMonth,
+                d.DepositYear,
+                d.DepositDate,
+                d.Type,
+                d.Notes,
+                d.IsVerified,
+                d.VerifiedById,
+                d.VerifiedAt,
+                d.CreatedAt))
             .ToListAsync(cancellationToken);
 
         return Result.Success(deposits);

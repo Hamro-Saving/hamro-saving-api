@@ -10,6 +10,7 @@ public sealed record DepositResponse(
     decimal Amount,
     int DepositMonth,
     int DepositYear,
+    DateOnly DepositDate,
     DepositType Type,
     string? Notes,
     bool IsVerified,

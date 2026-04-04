@@ -6,6 +6,7 @@ using HamroSavings.Domain.Members;
 using HamroSavings.Domain.Savings;
 using HamroSavings.Domain.Users;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace HamroSavings.Infrastructure.Database;
 
@@ -21,6 +22,16 @@ public sealed class HamroSavingsDbContext(DbContextOptions<HamroSavingsDbContext
     public DbSet<Expense> Expenses { get; init; }
     public DbSet<FixedDeposit> FixedDeposits { get; init; }
 
+    protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+    {
+        // Normalize all DateTime values to UTC before writing to Postgres timestamptz columns.
+        // Handles DateTimes deserialized from JSON (Kind=Unspecified) transparently.
+        configurationBuilder.Properties<DateTime>()
+            .HaveConversion<UtcDateTimeConverter>();
+        configurationBuilder.Properties<DateTime?>()
+            .HaveConversion<NullableUtcDateTimeConverter>();
+    }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasDefaultSchema("public");
@@ -34,3 +45,13 @@ public sealed class HamroSavingsDbContext(DbContextOptions<HamroSavingsDbContext
         return result;
     }
 }
+
+internal sealed class UtcDateTimeConverter()
+    : ValueConverter<DateTime, DateTime>(
+        v => v.Kind == DateTimeKind.Utc ? v : DateTime.SpecifyKind(v, DateTimeKind.Utc),
+        v => DateTime.SpecifyKind(v, DateTimeKind.Utc));
+
+internal sealed class NullableUtcDateTimeConverter()
+    : ValueConverter<DateTime?, DateTime?>(
+        v => v == null ? v : v.Value.Kind == DateTimeKind.Utc ? v : DateTime.SpecifyKind(v.Value, DateTimeKind.Utc),
+        v => v == null ? v : DateTime.SpecifyKind(v.Value, DateTimeKind.Utc));

@@ -9,5 +9,6 @@ public sealed record CreateDepositCommand(
     decimal Amount,
     int DepositMonth,
     int DepositYear,
+    DateOnly DepositDate,
     DepositType Type,
     string? Notes) : ICommand<Guid>;

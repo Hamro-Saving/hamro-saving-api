@@ -43,6 +43,7 @@ internal sealed class CreateDepositCommandHandler(
             command.Amount,
             command.DepositMonth,
             command.DepositYear,
+            command.DepositDate,
             command.Type,
             command.Notes,
             userContext.UserId);

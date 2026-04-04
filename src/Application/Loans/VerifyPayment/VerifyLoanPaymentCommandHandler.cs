@@ -31,7 +31,7 @@ internal sealed class VerifyLoanPaymentCommandHandler(
         var loan = await dbContext.Loans
             .FirstOrDefaultAsync(l => l.Id == payment.LoanId, cancellationToken);
 
-        if (loan is not null && !userContext.IsSuperAdmin && loan.GroupId != command.GroupId)
+        if (loan is not null && !userContext.IsSuperAdmin && loan.GroupId != userContext.GroupId)
         {
             return Result.Failure(LoanErrors.NotInGroup);
         }

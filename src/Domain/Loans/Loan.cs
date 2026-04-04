@@ -55,4 +55,14 @@ public sealed class Loan : Entity
     public void MarkAsOverdue() => Status = LoanStatus.Overdue;
     public void Cancel() => Status = LoanStatus.Cancelled;
     public void Approve(Guid approvedById) => ApprovedById = approvedById;
+
+    public Result Update(decimal amount, decimal interestRate, DateTime? dueDate, string? notes)
+    {
+        if (ApprovedById is not null) return Result.Failure(LoanErrors.CannotModifyApproved);
+        Amount = amount;
+        InterestRate = interestRate;
+        DueDate = dueDate;
+        Notes = notes;
+        return Result.Success();
+    }
 }

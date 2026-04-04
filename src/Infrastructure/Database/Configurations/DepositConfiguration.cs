@@ -20,6 +20,9 @@ internal sealed class DepositConfiguration : IEntityTypeConfiguration<Deposit>
         builder.Property(d => d.DepositYear)
             .IsRequired();
 
+        builder.Property(d => d.DepositDate)
+            .IsRequired();
+
         builder.Property(d => d.Type)
             .IsRequired()
             .HasConversion<string>();

@@ -19,7 +19,12 @@ public sealed class CreateDepositCommandValidator : AbstractValidator<CreateDepo
             .InclusiveBetween(1, 12).WithMessage("Deposit month must be between 1 and 12.");
 
         RuleFor(x => x.DepositYear)
-            .GreaterThan(2000).WithMessage("Deposit year must be greater than 2000.")
-            .LessThanOrEqualTo(DateTime.UtcNow.Year + 1).WithMessage("Deposit year cannot be in the far future.");
+            .GreaterThan(2070).WithMessage("Deposit year must be greater than 2070 (BS).")
+            .LessThanOrEqualTo(2100).WithMessage("Deposit year cannot be in the far future.");
+
+        RuleFor(x => x.DepositDate)
+            .NotEmpty().WithMessage("Deposit date is required.")
+            .LessThanOrEqualTo(DateOnly.FromDateTime(DateTime.UtcNow.AddDays(1)))
+            .WithMessage("Deposit date cannot be in the future.");
     }
 }

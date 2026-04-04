@@ -16,6 +16,9 @@ public static class LoanErrors
     public static readonly Error PaymentAlreadyVerified =
         Error.Conflict("LoanPayment.AlreadyVerified", "This payment has already been verified.");
 
+    public static readonly Error CannotModifyApproved =
+        Error.Problem("Loan.CannotModifyApproved", "Cannot modify an approved loan.");
+
     public static readonly Error NotInGroup =
         Error.Forbidden("Loan.NotInGroup", "Loan does not belong to this group.");
 }
