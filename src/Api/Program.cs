@@ -11,7 +11,7 @@ builder.Host.UseSerilog((context, loggerConfig) =>
     loggerConfig.ReadFrom.Configuration(context.Configuration));
 
 builder.Services.AddHealthChecks();
-builder.Services.AddOpenApi();
+builder.Services.AddOpenApiDocumentation(builder.Configuration);
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddPresentation();
@@ -42,7 +42,11 @@ WebApplication app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
-    app.MapScalarApiReference();
+    app.MapScalarApiReference(options =>
+    {
+        options.Title = "HamroSavings API";
+        options.AddHttpAuthentication("Bearer", scheme => { scheme.Token = string.Empty; });
+    });
     app.ApplyMigrations();
 }
 

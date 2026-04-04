@@ -1,5 +1,7 @@
 using HamroSavings.Api.Endpoints;
 using HamroSavings.Api.Infrastructure;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.OpenApi;
 using System.Reflection;
 using System.Text.Json.Serialization;
 
@@ -15,6 +17,59 @@ public static class ServiceCollectionExtensions
         {
             options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
         });
+        return services;
+    }
+
+    public static IServiceCollection AddOpenApiDocumentation(
+        this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        services.AddOpenApi(options =>
+        {
+            options.AddDocumentTransformer((document, context, cancellationToken) =>
+            {
+                document.Info = new OpenApiInfo
+                {
+                    Title = configuration["OpenApi:Title"] ?? "HamroSavings API",
+                    Description = configuration["OpenApi:Description"],
+                    Version = configuration["OpenApi:Version"] ?? "v1"
+                };
+
+                var components = document.Components ??= new OpenApiComponents();
+                components.SecuritySchemes ??= new Dictionary<string, IOpenApiSecurityScheme>();
+                components.SecuritySchemes["Bearer"] = new OpenApiSecurityScheme
+                {
+                    Type = SecuritySchemeType.Http,
+                    Scheme = "bearer",
+                    BearerFormat = "JWT",
+                    In = ParameterLocation.Header,
+                    Description = "Enter your JWT token."
+                };
+
+                return Task.CompletedTask;
+            });
+
+            options.AddOperationTransformer((operation, context, cancellationToken) =>
+            {
+                var requiresAuth = context.Description.ActionDescriptor.EndpointMetadata
+                    .OfType<AuthorizeAttribute>()
+                    .Any();
+
+                if (requiresAuth)
+                {
+                    operation.Security =
+                    [
+                        new OpenApiSecurityRequirement
+                        {
+                            [new OpenApiSecuritySchemeReference("Bearer")] = []
+                        }
+                    ];
+                }
+
+                return Task.CompletedTask;
+            });
+        });
+
         return services;
     }
 
