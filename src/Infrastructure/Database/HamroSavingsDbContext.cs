@@ -5,7 +5,6 @@ using HamroSavings.Domain.Loans;
 using HamroSavings.Domain.Members;
 using HamroSavings.Domain.Savings;
 using HamroSavings.Domain.Users;
-using HamroSavings.SharedKernel;
 using Microsoft.EntityFrameworkCore;
 
 namespace HamroSavings.Infrastructure.Database;

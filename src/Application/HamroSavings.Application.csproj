@@ -1,8 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <ProjectReference Include="..\Domain\Domain.csproj" />
-    <ProjectReference Include="..\SharedKernel\SharedKernel.csproj" />
+    <ProjectReference Include="..\Domain\HamroSavings.Domain.csproj" />
+    <ProjectReference Include="..\SharedKernel\HamroSavings.SharedKernel.csproj" />
   </ItemGroup>
 
   <ItemGroup>

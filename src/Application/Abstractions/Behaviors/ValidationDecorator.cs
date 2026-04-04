@@ -7,8 +7,7 @@ namespace HamroSavings.Application.Abstractions.Behaviors;
 internal sealed class ValidationDecorator<TCommand, TResponse>(
     ICommandHandler<TCommand, TResponse> innerHandler,
     IEnumerable<IValidator<TCommand>> validators)
-    : ICommandHandler<TCommand, TResponse>
-    where TCommand : ICommand<TResponse>
+    : ICommandHandler<TCommand, TResponse> where TCommand : ICommand<TResponse>
 {
     public async Task<Result<TResponse>> Handle(TCommand command, CancellationToken cancellationToken = default)
     {

@@ -5,14 +5,14 @@
     <File Path="docker-compose.yml" />
   </Folder>
   <Folder Name="/src/">
-    <Project Path="src/Api/Api.csproj" />
-    <Project Path="src/Application/Application.csproj" />
-    <Project Path="src/Domain/Domain.csproj" />
-    <Project Path="src/Infrastructure/Infrastructure.csproj" />
-    <Project Path="src/SharedKernel/SharedKernel.csproj" />
+    <Project Path="src/Api/HamroSavings.Api.csproj" />
+    <Project Path="src/Application/HamroSavings.Application.csproj" />
+    <Project Path="src/Domain/HamroSavings.Domain.csproj" />
+    <Project Path="src/Infrastructure/HamroSavings.Infrastructure.csproj" />
+    <Project Path="src/SharedKernel/HamroSavings.SharedKernel.csproj" />
   </Folder>
   <Folder Name="/tests/">
-    <Project Path="tests/UnitTests/UnitTests.csproj" />
-    <Project Path="tests/IntegrationTests/IntegrationTests.csproj" />
+    <Project Path="tests/UnitTests/HamroSavings.UnitTests.csproj" />
+    <Project Path="tests/IntegrationTests/HamroSavings.IntegrationTests.csproj" />
   </Folder>
 </Solution>
