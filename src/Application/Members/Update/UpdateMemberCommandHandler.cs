@@ -1,6 +1,6 @@
 using HamroSavings.Application.Abstractions.Data;
 using HamroSavings.Application.Abstractions.Messaging;
-using HamroSavings.Domain.Users;
+using HamroSavings.Domain.Members;
 using HamroSavings.SharedKernel;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,26 +11,30 @@ internal sealed class UpdateMemberCommandHandler(IApplicationDbContext dbContext
 {
     public async Task<Result> Handle(UpdateMemberCommand command, CancellationToken cancellationToken = default)
     {
-        var user = await dbContext.Users
-            .FirstOrDefaultAsync(u => u.Id == command.MemberId, cancellationToken);
+        var member = await dbContext.Members
+            .FirstOrDefaultAsync(m => m.Id == command.MemberId, cancellationToken);
 
-        if (user is null)
+        if (member is null)
+            return Result.Failure(MemberErrors.NotFound(command.MemberId));
+
+        if (!string.IsNullOrEmpty(command.Email))
         {
-            return Result.Failure(UserErrors.NotFound(command.MemberId));
-        }
-
-        user.UpdateProfile(command.FirstName, command.LastName);
-        user.ChangeRole(command.Role);
-
-        if (!string.Equals(user.Email, command.Email, StringComparison.OrdinalIgnoreCase))
-        {
-            bool emailTaken = await dbContext.Users
-                .AnyAsync(u => u.Email == command.Email.ToLowerInvariant() && u.Id != command.MemberId, cancellationToken);
+            bool emailTaken = await dbContext.Members
+                .AnyAsync(m => m.Email == command.Email.ToLowerInvariant()
+                            && m.GroupId == member.GroupId
+                            && m.Id != command.MemberId, cancellationToken);
 
             if (emailTaken)
-            {
-                return Result.Failure(UserErrors.EmailNotUnique);
-            }
+                return Result.Failure(MemberErrors.EmailNotUnique);
+        }
+
+        member.UpdateProfile(command.FirstName, command.LastName, command.Email, command.PhoneNumber, command.Address);
+
+        if (member.MembershipType == MembershipType.Member && !string.IsNullOrEmpty(command.Email))
+        {
+            var user = await dbContext.Users
+                .FirstOrDefaultAsync(u => u.MemberId == member.Id, cancellationToken);
+            user?.UpdateEmail(command.Email);
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);

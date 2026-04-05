@@ -27,7 +27,7 @@ internal sealed class UpdateLoanCommandHandler(
 
         // Members can only edit their own Member-type loans; admins can edit any in their group
         if (!userContext.IsSuperAdmin && !userContext.IsAdmin &&
-            (loan.BorrowerType != "Member" || loan.BorrowerId != userContext.UserId))
+            (loan.BorrowerType != "Member" || loan.BorrowerId != userContext.MemberId))
             return Result.Failure(UserErrors.Unauthorized);
 
         var hasApprovals = await dbContext.LoanApprovals

@@ -21,4 +21,13 @@ public static class UserErrors
 
     public static readonly Error NotInGroup =
         Error.Forbidden("User.NotInGroup", "You do not have access to this group.");
+
+    public static readonly Error InviteTokenInvalid =
+        Error.Problem("User.InviteTokenInvalid", "The invite link is invalid.");
+
+    public static readonly Error InviteTokenExpired =
+        Error.Problem("User.InviteTokenExpired", "The invite link has expired. Please ask your admin to resend the invite.");
+
+    public static readonly Error AlreadyActivated =
+        Error.Conflict("User.AlreadyActivated", "This account has already been activated.");
 }

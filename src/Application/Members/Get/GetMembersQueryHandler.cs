@@ -1,6 +1,7 @@
 using HamroSavings.Application.Abstractions.Authentication;
 using HamroSavings.Application.Abstractions.Data;
 using HamroSavings.Application.Abstractions.Messaging;
+using HamroSavings.Domain.Members;
 using HamroSavings.Domain.Users;
 using HamroSavings.SharedKernel;
 using Microsoft.EntityFrameworkCore;
@@ -14,33 +15,47 @@ internal sealed class GetMembersQueryHandler(
 {
     public async Task<Result<List<MemberResponse>>> Handle(GetMembersQuery query, CancellationToken cancellationToken = default)
     {
-        var membersQuery = query.IncludeAdmins
-            ? dbContext.Users.Where(u => u.Role == UserRole.Member || u.Role == UserRole.Admin)
-            : dbContext.Users.Where(u => u.Role == UserRole.Member);
+        IQueryable<Member> membersQuery;
+
+        if (query.MembershipType == MembershipType.NonMember)
+        {
+            membersQuery = dbContext.Members.Where(m => m.MembershipType == MembershipType.NonMember);
+        }
+        else
+        {
+            membersQuery = query.IncludeAdmins
+                ? dbContext.Members.Where(m => m.MembershipType == MembershipType.Member)
+                : dbContext.Members.Where(m => m.MembershipType == MembershipType.Member &&
+                      !dbContext.Users.Any(u => u.MemberId == m.Id && u.Role == UserRole.Admin));
+        }
 
         if (!userContext.IsSuperAdmin)
         {
             var groupId = userContext.GroupId;
-            membersQuery = membersQuery.Where(u => u.GroupId == groupId);
+            membersQuery = membersQuery.Where(m => m.GroupId == groupId);
         }
         else if (query.GroupId.HasValue)
         {
-            membersQuery = membersQuery.Where(u => u.GroupId == query.GroupId.Value);
+            membersQuery = membersQuery.Where(m => m.GroupId == query.GroupId.Value);
         }
 
         var members = await membersQuery
-            .OrderBy(u => u.LastName)
-            .ThenBy(u => u.FirstName)
-            .Select(u => new MemberResponse(
-                u.Id,
-                u.Email,
-                u.FirstName,
-                u.LastName,
-                u.FirstName + " " + u.LastName,
-                u.Role,
-                u.GroupId,
-                u.IsActive,
-                u.CreatedAt))
+            .OrderBy(m => m.FirstName)
+            .ThenBy(m => m.LastName)
+            .Select(m => new MemberResponse(
+                m.Id,
+                m.Email,
+                m.FirstName,
+                m.LastName,
+                m.LastName == null ? m.FirstName : m.FirstName + " " + m.LastName,
+                dbContext.Users.Where(u => u.MemberId == m.Id).Select(u => (UserRole?)u.Role).FirstOrDefault(),
+                m.MembershipType,
+                m.GroupId,
+                m.IsActive,
+                dbContext.Users.Any(u => u.MemberId == m.Id && u.IsActive),
+                m.PhoneNumber,
+                m.Address,
+                m.CreatedAt))
             .ToListAsync(cancellationToken);
 
         return Result.Success(members);

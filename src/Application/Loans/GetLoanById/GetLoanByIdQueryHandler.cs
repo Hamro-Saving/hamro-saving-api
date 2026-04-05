@@ -30,23 +30,11 @@ internal sealed class GetLoanByIdQueryHandler(
             return Result.Failure<LoanResponse>(LoanErrors.NotFound(query.LoanId));
         }
 
-        string borrowerName;
-        if (loan.BorrowerType == "Member")
-        {
-            var member = await dbContext.Users
-                .Where(u => u.Id == loan.BorrowerId)
-                .Select(u => new { Name = u.FirstName + " " + u.LastName })
-                .FirstOrDefaultAsync(cancellationToken);
-            borrowerName = member?.Name ?? "Unknown";
-        }
-        else
-        {
-            var nonMember = await dbContext.NonMembers
-                .Where(nm => nm.Id == loan.BorrowerId)
-                .Select(nm => new { nm.FullName })
-                .FirstOrDefaultAsync(cancellationToken);
-            borrowerName = nonMember?.FullName ?? "Unknown";
-        }
+        var borrower = await dbContext.Members
+            .Where(m => m.Id == loan.BorrowerId)
+            .Select(m => new { Name = m.LastName == null ? m.FirstName : m.FirstName + " " + m.LastName })
+            .FirstOrDefaultAsync(cancellationToken);
+        var borrowerName = borrower?.Name ?? "Unknown";
 
         var approvalCount = await dbContext.LoanApprovals
             .CountAsync(a => a.LoanId == loan.Id, cancellationToken);
@@ -62,7 +50,14 @@ internal sealed class GetLoanByIdQueryHandler(
         var approverIds = approvals.Select(a => a.ApproverId).ToList();
         var approverNames = await dbContext.Users
             .Where(u => approverIds.Contains(u.Id))
-            .Select(u => new { u.Id, Name = u.FirstName + " " + u.LastName })
+            .Select(u => new
+            {
+                u.Id,
+                Name = dbContext.Members
+                    .Where(m => m.Id == u.MemberId)
+                    .Select(m => m.LastName == null ? m.FirstName : m.FirstName + " " + m.LastName)
+                    .FirstOrDefault() ?? "Unknown"
+            })
             .ToListAsync(cancellationToken);
         var approverDict = approverNames.ToDictionary(u => u.Id, u => u.Name);
 
@@ -70,8 +65,8 @@ internal sealed class GetLoanByIdQueryHandler(
             .Select(a => new ApproverInfo(a.ApproverId, approverDict.GetValueOrDefault(a.ApproverId, "Unknown"), a.ApprovedAt))
             .ToList();
 
-        var totalGroupMembers = await dbContext.Users
-            .CountAsync(u => u.GroupId == loan.GroupId && u.Role == Domain.Users.UserRole.Member, cancellationToken);
+        var totalGroupMembers = await dbContext.Members
+            .CountAsync(m => m.GroupId == loan.GroupId && m.MembershipType == Domain.Members.MembershipType.Member, cancellationToken);
 
         var requiredApprovals = (int)Math.Ceiling(totalGroupMembers / 2.0);
         var elapsedDays = loan.Status == LoanStatus.Active ? (DateTime.UtcNow - loan.StartDate).Days : 0;

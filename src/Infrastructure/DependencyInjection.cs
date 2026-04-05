@@ -1,7 +1,9 @@
 using HamroSavings.Application.Abstractions.Authentication;
 using HamroSavings.Application.Abstractions.Data;
+using HamroSavings.Application.Abstractions.Email;
 using HamroSavings.Infrastructure.Authentication;
 using HamroSavings.Infrastructure.Database;
+using HamroSavings.Infrastructure.Email;
 using HamroSavings.Infrastructure.Time;
 using HamroSavings.SharedKernel;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -69,5 +71,7 @@ public static class DependencyInjection
     private static void AddServices(this IServiceCollection services)
     {
         services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
+        services.AddScoped<IEmailSender, SmtpEmailService>();
+        services.AddScoped<IEmailService, EmailService>();
     }
 }

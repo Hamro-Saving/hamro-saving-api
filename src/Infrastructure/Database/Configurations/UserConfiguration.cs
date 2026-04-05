@@ -17,27 +17,29 @@ internal sealed class UserConfiguration : IEntityTypeConfiguration<User>
         builder.HasIndex(u => u.Email)
             .IsUnique();
 
-        builder.Property(u => u.PasswordHash)
-            .IsRequired();
-
-        builder.Property(u => u.FirstName)
-            .IsRequired()
-            .HasMaxLength(100);
-
-        builder.Property(u => u.LastName)
-            .IsRequired()
-            .HasMaxLength(100);
+        builder.Property(u => u.PasswordHash);
 
         builder.Property(u => u.Role)
             .IsRequired()
             .HasConversion<string>();
 
         builder.Property(u => u.IsActive)
-            .HasDefaultValue(true);
+            .HasDefaultValue(false);
+
+        builder.Property(u => u.MemberId);
+
+        builder.HasIndex(u => u.MemberId)
+            .IsUnique()
+            .HasFilter("member_id IS NOT NULL");
+
+        builder.HasIndex(u => u.InviteToken)
+            .IsUnique()
+            .HasFilter("invite_token IS NOT NULL");
+
+        builder.Property(u => u.InviteToken);
+        builder.Property(u => u.InviteTokenExpiresAt);
 
         builder.Property(u => u.CreatedAt)
             .IsRequired();
-
-        builder.Ignore(u => u.FullName);
     }
 }

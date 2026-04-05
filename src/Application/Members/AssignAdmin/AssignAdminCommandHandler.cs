@@ -1,5 +1,6 @@
 using HamroSavings.Application.Abstractions.Data;
 using HamroSavings.Application.Abstractions.Messaging;
+using HamroSavings.Domain.Members;
 using HamroSavings.Domain.Users;
 using HamroSavings.SharedKernel;
 using Microsoft.EntityFrameworkCore;
@@ -11,37 +12,35 @@ internal sealed class AssignAdminCommandHandler(IApplicationDbContext dbContext)
 {
     public async Task<Result> Handle(AssignAdminCommand command, CancellationToken cancellationToken = default)
     {
-        var member = await dbContext.Users
-            .FirstOrDefaultAsync(u => u.Id == command.MemberId && u.IsActive, cancellationToken);
+        var member = await dbContext.Members
+            .FirstOrDefaultAsync(m => m.Id == command.MemberId && m.IsActive, cancellationToken);
 
         if (member is null)
-        {
-            return Result.Failure(UserErrors.NotFound(command.MemberId));
-        }
+            return Result.Failure(MemberErrors.NotFound(command.MemberId));
 
-        if (member.Role is not UserRole.Member and not UserRole.Admin)
-        {
+        // NonMembers cannot be assigned as admin
+        if (member.MembershipType == MembershipType.NonMember)
             return Result.Failure(UserErrors.Unauthorized);
-        }
 
-        if (!member.GroupId.HasValue)
-        {
-            return Result.Failure(UserErrors.NotInGroup);
-        }
+        var user = await dbContext.Users
+            .FirstOrDefaultAsync(u => u.MemberId == command.MemberId, cancellationToken);
+
+        if (user is null)
+            return Result.Failure(MemberErrors.NotFound(command.MemberId));
 
         // Demote any existing Admin in this group to Member
-        var existingAdmins = await dbContext.Users
-            .Where(u => u.GroupId == member.GroupId && u.Role == UserRole.Admin && u.Id != command.MemberId)
+        var existingAdminUsers = await dbContext.Users
+            .Where(u => u.Role == UserRole.Admin && u.MemberId != null &&
+                        dbContext.Members.Any(m => m.Id == u.MemberId && m.GroupId == member.GroupId) &&
+                        u.Id != user.Id)
             .ToListAsync(cancellationToken);
 
-        foreach (var admin in existingAdmins)
-        {
+        foreach (var admin in existingAdminUsers)
             admin.ChangeRole(UserRole.Member);
-        }
 
-        member.ChangeRole(UserRole.Admin);
+        user.ChangeRole(UserRole.Admin);
+
         await dbContext.SaveChangesAsync(cancellationToken);
-
         return Result.Success();
     }
 }

@@ -15,7 +15,7 @@ public sealed class HamroSavingsDbContext(DbContextOptions<HamroSavingsDbContext
 {
     public DbSet<Group> Groups { get; init; }
     public DbSet<User> Users { get; init; }
-    public DbSet<NonMember> NonMembers { get; init; }
+    public DbSet<Member> Members { get; init; }
     public DbSet<Deposit> Deposits { get; init; }
     public DbSet<Loan> Loans { get; init; }
     public DbSet<LoanPayment> LoanPayments { get; init; }

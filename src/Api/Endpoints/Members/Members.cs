@@ -5,6 +5,7 @@ using HamroSavings.Application.Abstractions.Messaging;
 using HamroSavings.Application.Members.Create;
 using HamroSavings.Application.Members.Get;
 using HamroSavings.Application.Members.GetById;
+using HamroSavings.Domain.Members;
 
 namespace HamroSavings.Api.Endpoints.Members;
 
@@ -17,11 +18,14 @@ public sealed class CreateMember : IEndpoint
             ICommandHandler<CreateMemberCommand, Guid> handler,
             CancellationToken ct) =>
         {
+            var memberType = Enum.Parse<MembershipType>(request.MembershipType);
             var command = new CreateMemberCommand(
-                request.Email,
-                request.Password,
+                memberType,
                 request.FirstName,
                 request.LastName,
+                request.Email,
+                request.PhoneNumber,
+                request.Address,
                 request.GroupId);
 
             var result = await handler.Handle(command, ct);
@@ -31,7 +35,7 @@ public sealed class CreateMember : IEndpoint
         })
         .WithTags("Members")
         .RequireAuthorization()
-        .WithSummary("Create a new member");
+        .WithSummary("Create a new member or non-member");
     }
 }
 
@@ -42,10 +46,12 @@ public sealed class GetMembers : IEndpoint
         app.MapGet("members", async (
             Guid? groupId,
             bool? includeAdmins,
+            string? membershipType,
             IQueryHandler<GetMembersQuery, List<MemberResponse>> handler,
             CancellationToken ct) =>
         {
-            var result = await handler.Handle(new GetMembersQuery(groupId, includeAdmins ?? false), ct);
+            MembershipType? parsedMemberType = membershipType != null ? Enum.Parse<MembershipType>(membershipType) : null;
+            var result = await handler.Handle(new GetMembersQuery(groupId, includeAdmins ?? false, parsedMemberType), ct);
             return result.Match(
                 members => Results.Ok(members),
                 error => CustomResults.Problem(error));
@@ -77,8 +83,10 @@ public sealed class GetMemberById : IEndpoint
 }
 
 public sealed record CreateMemberRequest(
-    string Email,
-    string Password,
+    string MembershipType,
     string FirstName,
-    string LastName,
+    string? LastName,
+    string? Email,
+    string? PhoneNumber,
+    string? Address,
     Guid GroupId);

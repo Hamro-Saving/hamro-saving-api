@@ -35,16 +35,12 @@ public static class ApplicationBuilderExtensions
 
         var email = configuration["SuperAdmin:Email"] ?? throw new InvalidOperationException("SuperAdmin:Email is not configured.");
         var password = configuration["SuperAdmin:Password"] ?? throw new InvalidOperationException("SuperAdmin:Password is not configured.");
-        var firstName = configuration["SuperAdmin:FirstName"] ?? "Super";
-        var lastName = configuration["SuperAdmin:LastName"] ?? "Admin";
 
         var passwordHash = passwordHasher.Hash(password);
-        var superAdmin = User.Create(
+        // SuperAdmin has no Member record
+        var superAdmin = User.CreateSuperAdmin(
             email: email,
-            passwordHash: passwordHash,
-            firstName: firstName,
-            lastName: lastName,
-            role: UserRole.SuperAdmin);
+            passwordHash: passwordHash);
 
         dbContext.Users.Add(superAdmin);
         dbContext.SaveChanges();

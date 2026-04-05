@@ -12,7 +12,7 @@ public interface IApplicationDbContext
 {
     DbSet<Group> Groups { get; }
     DbSet<User> Users { get; }
-    DbSet<NonMember> NonMembers { get; }
+    DbSet<Member> Members { get; }
     DbSet<Deposit> Deposits { get; }
     DbSet<Loan> Loans { get; }
     DbSet<LoanPayment> LoanPayments { get; }

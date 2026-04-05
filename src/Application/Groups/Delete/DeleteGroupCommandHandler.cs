@@ -21,7 +21,7 @@ internal sealed class DeleteGroupCommandHandler(IApplicationDbContext dbContext)
         }
 
         bool hasData =
-            await dbContext.Users.AnyAsync(u => u.GroupId == command.GroupId, cancellationToken) ||
+            await dbContext.Members.AnyAsync(m => m.GroupId == command.GroupId, cancellationToken) ||
             await dbContext.Deposits.AnyAsync(d => d.GroupId == command.GroupId, cancellationToken) ||
             await dbContext.Loans.AnyAsync(l => l.GroupId == command.GroupId, cancellationToken) ||
             await dbContext.Expenses.AnyAsync(e => e.GroupId == command.GroupId, cancellationToken) ||

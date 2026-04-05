@@ -25,7 +25,7 @@ internal sealed class UpdateDepositCommandHandler(
             return Result.Failure(DepositErrors.NotInGroup);
 
         // Members can only edit their own deposits; admins can edit any in their group
-        if (!userContext.IsSuperAdmin && !userContext.IsAdmin && deposit.MemberId != userContext.UserId)
+        if (!userContext.IsSuperAdmin && !userContext.IsAdmin && deposit.MemberId != userContext.MemberId)
             return Result.Failure(UserErrors.Unauthorized);
 
         var result = deposit.Update(command.Amount, command.Notes);

@@ -2,6 +2,7 @@ using HamroSavings.Application.Abstractions.Authentication;
 using HamroSavings.Application.Abstractions.Data;
 using HamroSavings.Application.Abstractions.Messaging;
 using HamroSavings.Domain.Groups;
+using HamroSavings.Domain.Members;
 using HamroSavings.Domain.Savings;
 using HamroSavings.Domain.Users;
 using HamroSavings.SharedKernel;
@@ -29,12 +30,12 @@ internal sealed class CreateDepositCommandHandler(
             return Result.Failure<Guid>(GroupErrors.NotFound(command.GroupId));
         }
 
-        var memberExists = await dbContext.Users
-            .AnyAsync(u => u.Id == command.MemberId && u.Role == UserRole.Member && u.GroupId == command.GroupId, cancellationToken);
+        var memberExists = await dbContext.Members
+            .AnyAsync(m => m.Id == command.MemberId && m.GroupId == command.GroupId, cancellationToken);
 
         if (!memberExists)
         {
-            return Result.Failure<Guid>(UserErrors.NotFound(command.MemberId));
+            return Result.Failure<Guid>(MemberErrors.NotFound(command.MemberId));
         }
 
         var deposit = Deposit.Create(

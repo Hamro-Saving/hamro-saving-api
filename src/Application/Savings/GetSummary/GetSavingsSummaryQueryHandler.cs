@@ -29,9 +29,9 @@ internal sealed class GetSavingsSummaryQueryHandler(
         var deposits = await depositsQuery.ToListAsync(cancellationToken);
 
         var memberIds = deposits.Select(d => d.MemberId).Distinct().ToList();
-        var members = await dbContext.Users
-            .Where(u => memberIds.Contains(u.Id))
-            .Select(u => new { u.Id, Name = u.FirstName + " " + u.LastName })
+        var members = await dbContext.Members
+            .Where(m => memberIds.Contains(m.Id))
+            .Select(m => new { m.Id, Name = m.LastName == null ? m.FirstName : m.FirstName + " " + m.LastName })
             .ToListAsync(cancellationToken);
 
         var memberDict = members.ToDictionary(m => m.Id, m => m.Name);

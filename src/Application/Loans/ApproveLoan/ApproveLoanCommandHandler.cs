@@ -2,6 +2,7 @@ using HamroSavings.Application.Abstractions.Authentication;
 using HamroSavings.Application.Abstractions.Data;
 using HamroSavings.Application.Abstractions.Messaging;
 using HamroSavings.Domain.Loans;
+using HamroSavings.Domain.Members;
 using HamroSavings.Domain.Users;
 using HamroSavings.SharedKernel;
 using Microsoft.EntityFrameworkCore;
@@ -30,7 +31,7 @@ internal sealed class ApproveLoanCommandHandler(
         if (loan.BorrowerType != "Member")
             return Result.Failure(LoanErrors.ApprovalNotApplicable);
 
-        if (loan.BorrowerId == userContext.UserId && loan.BorrowerType == "Member")
+        if (loan.BorrowerId == userContext.MemberId && loan.BorrowerType == "Member")
             return Result.Failure(LoanErrors.CannotSelfApprove);
 
         var alreadyApproved = await dbContext.LoanApprovals
@@ -58,8 +59,8 @@ internal sealed class ApproveLoanCommandHandler(
         var approvalCount = await dbContext.LoanApprovals
             .CountAsync(a => a.LoanId == command.LoanId, cancellationToken);
 
-        var totalMembers = await dbContext.Users
-            .CountAsync(u => u.GroupId == userContext.GroupId && u.Role == UserRole.Member, cancellationToken);
+        var totalMembers = await dbContext.Members
+            .CountAsync(m => m.GroupId == userContext.GroupId && m.MembershipType == MembershipType.Member, cancellationToken);
 
         if (approvalCount > totalMembers / 2.0)
         {

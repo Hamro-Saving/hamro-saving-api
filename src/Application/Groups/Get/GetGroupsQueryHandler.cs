@@ -1,6 +1,7 @@
 using HamroSavings.Application.Abstractions.Authentication;
 using HamroSavings.Application.Abstractions.Data;
 using HamroSavings.Application.Abstractions.Messaging;
+using HamroSavings.Domain.Members;
 using HamroSavings.Domain.Users;
 using HamroSavings.SharedKernel;
 using Microsoft.EntityFrameworkCore;
@@ -33,8 +34,8 @@ internal sealed class GetGroupsQueryHandler(
                 g.NonMemberInterestRate,
                 g.CreatedAt,
                 g.UpdatedAt,
-                dbContext.Users.Count(u => u.GroupId == g.Id && u.IsActive &&
-                    (u.Role == UserRole.Member || u.Role == UserRole.Admin))))
+                dbContext.Members.Count(m => m.GroupId == g.Id && m.IsActive &&
+                    m.MembershipType == MembershipType.Member)))
             .ToListAsync(cancellationToken);
 
         return Result.Success(groups);

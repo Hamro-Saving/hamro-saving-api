@@ -357,7 +357,7 @@ namespace HamroSavings.Infrastructure.Database.Migrations
                     b.ToTable("loan_payments", "public");
                 });
 
-            modelBuilder.Entity("HamroSavings.Domain.Members.NonMember", b =>
+            modelBuilder.Entity("HamroSavings.Domain.Members.Member", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -378,11 +378,11 @@ namespace HamroSavings.Infrastructure.Database.Migrations
                         .HasColumnType("character varying(256)")
                         .HasColumnName("email");
 
-                    b.Property<string>("FullName")
+                    b.Property<string>("FirstName")
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)")
-                        .HasColumnName("full_name");
+                        .HasColumnName("first_name");
 
                     b.Property<Guid>("GroupId")
                         .HasColumnType("uuid")
@@ -394,15 +394,30 @@ namespace HamroSavings.Infrastructure.Database.Migrations
                         .HasDefaultValue(true)
                         .HasColumnName("is_active");
 
-                    b.Property<string>("Phone")
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)")
-                        .HasColumnName("phone");
+                    b.Property<string>("LastName")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("last_name");
+
+                    b.Property<string>("MembershipType")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("membership_type");
+
+                    b.Property<string>("PhoneNumber")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("phone_number");
 
                     b.HasKey("Id")
-                        .HasName("pk_non_members");
+                        .HasName("pk_members");
 
-                    b.ToTable("non_members", "public");
+                    b.HasIndex("Email", "GroupId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_members_email_group_id")
+                        .HasFilter("email IS NOT NULL");
+
+                    b.ToTable("members", "public");
                 });
 
             modelBuilder.Entity("HamroSavings.Domain.Savings.Deposit", b =>
@@ -492,30 +507,25 @@ namespace HamroSavings.Infrastructure.Database.Migrations
                         .HasColumnType("character varying(256)")
                         .HasColumnName("email");
 
-                    b.Property<string>("FirstName")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasColumnName("first_name");
-
-                    b.Property<Guid?>("GroupId")
+                    b.Property<Guid?>("InviteToken")
                         .HasColumnType("uuid")
-                        .HasColumnName("group_id");
+                        .HasColumnName("invite_token");
+
+                    b.Property<DateTime?>("InviteTokenExpiresAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("invite_token_expires_at");
 
                     b.Property<bool>("IsActive")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
-                        .HasDefaultValue(true)
+                        .HasDefaultValue(false)
                         .HasColumnName("is_active");
 
-                    b.Property<string>("LastName")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasColumnName("last_name");
+                    b.Property<Guid?>("MemberId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("member_id");
 
                     b.Property<string>("PasswordHash")
-                        .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("password_hash");
 
@@ -530,6 +540,16 @@ namespace HamroSavings.Infrastructure.Database.Migrations
                     b.HasIndex("Email")
                         .IsUnique()
                         .HasDatabaseName("ix_users_email");
+
+                    b.HasIndex("InviteToken")
+                        .IsUnique()
+                        .HasDatabaseName("ix_users_invite_token")
+                        .HasFilter("invite_token IS NOT NULL");
+
+                    b.HasIndex("MemberId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_users_member_id")
+                        .HasFilter("member_id IS NOT NULL");
 
                     b.ToTable("users", "public");
                 });

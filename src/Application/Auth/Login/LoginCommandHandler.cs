@@ -19,21 +19,20 @@ internal sealed class LoginCommandHandler(
             .FirstOrDefaultAsync(u => u.Email == command.Email.ToLowerInvariant(), cancellationToken);
 
         if (user is null)
-        {
             return Result.Failure<string>(UserErrors.InvalidCredentials);
-        }
 
         if (!user.IsActive)
-        {
             return Result.Failure<string>(UserErrors.NotActive);
-        }
 
-        if (!passwordHasher.Verify(command.Password, user.PasswordHash))
-        {
+        if (user.PasswordHash is null || !passwordHasher.Verify(command.Password, user.PasswordHash))
             return Result.Failure<string>(UserErrors.InvalidCredentials);
-        }
 
-        var token = tokenProvider.Create(user);
+        // Look up linked Member to get group context (null for SuperAdmin)
+        var member = user.MemberId.HasValue
+            ? await dbContext.Members.FindAsync([user.MemberId.Value], cancellationToken)
+            : null;
+
+        var token = tokenProvider.Create(user, member);
         return Result.Success(token);
     }
 }

@@ -46,14 +46,14 @@ internal sealed class GetDepositsQueryHandler(
         }
 
         var deposits = await depositsQuery
-            .Join(dbContext.Users,
+            .Join(dbContext.Members,
                 d => d.MemberId,
-                u => u.Id,
-                (d, u) => new
+                m => m.Id,
+                (d, m) => new
                 {
                     d.Id,
                     d.MemberId,
-                    MemberName = u.FirstName + " " + u.LastName,
+                    MemberName = m.FirstName + " " + m.LastName,
                     d.GroupId,
                     d.Amount,
                     d.DepositMonth,

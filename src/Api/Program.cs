@@ -12,10 +12,14 @@ builder.Host.UseSerilog((context, loggerConfig) =>
 
 builder.Services.AddHealthChecks();
 builder.Services.AddOpenApiDocumentation(builder.Configuration);
-builder.Services.AddApplication();
+builder.Services.AddApplication(builder.Configuration);
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddPresentation();
 builder.Services.AddEndpoints(Assembly.GetExecutingAssembly());
+
+builder.Services.AddAuthorizationBuilder()
+    .AddPolicy("SuperAdmin", policy => policy.RequireRole("SuperAdmin"))
+    .AddPolicy("Admin", policy => policy.RequireRole("Admin", "SuperAdmin"));
 
 builder.Services.AddCors(options =>
     options.AddDefaultPolicy(policy =>
