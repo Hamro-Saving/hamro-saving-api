@@ -435,3 +435,4 @@ bin\*
 # macOS
 .DS_Store
 **/.DS_Store
+appsettings.Development.json
