@@ -3,6 +3,8 @@ using HamroSavings.Api.Extensions;
 using HamroSavings.Api.Infrastructure;
 using HamroSavings.Application.Abstractions.Messaging;
 using HamroSavings.Application.Members.AssignAdmin;
+using HamroSavings.Application.Members.RemoveAdmin;
+using HamroSavings.Application.Members.ResendInvite;
 
 namespace HamroSavings.Api.Endpoints.Members;
 
@@ -22,6 +24,46 @@ public sealed class AssignAdmin : IEndpoint
         })
         .WithTags("Members")
         .RequireAuthorization()
-        .WithSummary("Assign a member as group admin (SuperAdmin only, demotes existing admin)");
+        .WithSummary("Assign a member as group admin (SuperAdmin only)");
+    }
+}
+
+public sealed class RemoveAdmin : IEndpoint
+{
+    public void MapEndpoint(IEndpointRouteBuilder app)
+    {
+        app.MapPut("members/{id:guid}/remove-admin", async (
+            Guid id,
+            ICommandHandler<RemoveAdminCommand> handler,
+            CancellationToken ct) =>
+        {
+            var result = await handler.Handle(new RemoveAdminCommand(id), ct);
+            return result.Match(
+                () => Results.NoContent(),
+                error => CustomResults.Problem(error));
+        })
+        .WithTags("Members")
+        .RequireAuthorization()
+        .WithSummary("Demote a group admin back to member (SuperAdmin only)");
+    }
+}
+
+public sealed class ResendInvite : IEndpoint
+{
+    public void MapEndpoint(IEndpointRouteBuilder app)
+    {
+        app.MapPost("members/{id:guid}/resend-invite", async (
+            Guid id,
+            ICommandHandler<ResendInviteCommand> handler,
+            CancellationToken ct) =>
+        {
+            var result = await handler.Handle(new ResendInviteCommand(id), ct);
+            return result.Match(
+                () => Results.NoContent(),
+                error => CustomResults.Problem(error));
+        })
+        .WithTags("Members")
+        .RequireAuthorization()
+        .WithSummary("Resend invite email to a member who hasn't activated their account (SuperAdmin only)");
     }
 }

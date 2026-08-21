@@ -32,6 +32,8 @@ internal sealed class GetGroupByIdQueryHandler(
                 g.IsActive,
                 g.MemberInterestRate,
                 g.NonMemberInterestRate,
+                g.ValidFrom,
+                g.ValidTo,
                 g.CreatedAt,
                 g.UpdatedAt,
                 dbContext.Members.Count(m => m.GroupId == g.Id && m.IsActive &&

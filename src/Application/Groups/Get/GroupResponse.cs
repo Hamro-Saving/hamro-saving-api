@@ -8,6 +8,8 @@ public sealed record GroupResponse(
     bool IsActive,
     decimal MemberInterestRate,
     decimal NonMemberInterestRate,
+    DateTime? ValidFrom,
+    DateTime? ValidTo,
     DateTime CreatedAt,
     DateTime UpdatedAt,
     int MemberCount);

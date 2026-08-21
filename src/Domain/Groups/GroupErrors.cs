@@ -13,6 +13,12 @@ public static class GroupErrors
     public static readonly Error NotActive =
         Error.Problem("Group.NotActive", "The group is not active.");
 
+    public static readonly Error ValidityExpired =
+        Error.Problem("Group.ValidityExpired", "The group's validity period has expired.");
+
+    public static readonly Error ValidityNotStarted =
+        Error.Problem("Group.ValidityNotStarted", "The group's validity period has not started yet.");
+
     public static readonly Error HasData =
         Error.Conflict("Group.HasData", "Cannot delete a group that has existing members or financial data.");
 }
