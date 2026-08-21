@@ -35,6 +35,9 @@ internal sealed class GroupConfiguration : IEntityTypeConfiguration<Group>
         builder.Property(g => g.IsActive)
             .HasDefaultValue(true);
 
+        builder.Property(g => g.ValidFrom);
+        builder.Property(g => g.ValidTo);
+
         builder.Property(g => g.CreatedAt)
             .IsRequired();
 

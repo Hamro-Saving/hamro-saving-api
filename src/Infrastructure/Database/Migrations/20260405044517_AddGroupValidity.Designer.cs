@@ -3,6 +3,7 @@ using System;
 using HamroSavings.Infrastructure.Database;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace HamroSavings.Infrastructure.Database.Migrations
 {
     [DbContext(typeof(HamroSavingsDbContext))]
-    partial class HamroSavingsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260405044517_AddGroupValidity")]
+    partial class AddGroupValidity
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -534,7 +537,6 @@ namespace HamroSavings.Infrastructure.Database.Migrations
                         .HasColumnName("member_id");
 
                     b.Property<string>("PasswordHash")
-                        .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("password_hash");
 

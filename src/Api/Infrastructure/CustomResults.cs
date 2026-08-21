@@ -17,7 +17,7 @@ public static class CustomResults
             ErrorType.NotFound => Results.NotFound(CreateProblemDetails(result.Error, StatusCodes.Status404NotFound)),
             ErrorType.Conflict => Results.Conflict(CreateProblemDetails(result.Error, StatusCodes.Status409Conflict)),
             ErrorType.Validation => Results.BadRequest(CreateProblemDetails(result.Error, StatusCodes.Status400BadRequest)),
-            ErrorType.Forbidden => Results.Forbid(),
+            ErrorType.Forbidden => Results.Json(CreateProblemDetails(result.Error, StatusCodes.Status403Forbidden), statusCode: StatusCodes.Status403Forbidden),
             _ => Results.Problem(CreateProblemDetails(result.Error, StatusCodes.Status500InternalServerError))
         };
     }

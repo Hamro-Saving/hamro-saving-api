@@ -436,3 +436,6 @@ bin\*
 .DS_Store
 **/.DS_Store
 appsettings.Development.json
+
+# JetBrains Rider / IntelliJ
+.idea/

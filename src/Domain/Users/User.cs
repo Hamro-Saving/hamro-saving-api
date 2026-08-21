@@ -6,7 +6,7 @@ public sealed class User : Entity
 {
     public Guid Id { get; private set; }
     public string Email { get; private set; } = string.Empty;
-    public string? PasswordHash { get; private set; }
+    public string PasswordHash { get; private set; } = string.Empty;
     public UserRole Role { get; private set; }
     public bool IsActive { get; private set; }
     public Guid? MemberId { get; private set; }
@@ -35,12 +35,13 @@ public sealed class User : Entity
     }
 
     /// <summary>Creates an inactive user linked to a Member, pending invite acceptance.</summary>
-    public static User CreateForMember(string email, Guid memberId)
+    public static User CreateMember(string email, Guid memberId, string passwordHash)
     {
         return new User
         {
             Id = Guid.CreateVersion7(),
             Email = email.ToLowerInvariant(),
+            PasswordHash = passwordHash,
             Role = UserRole.Member,
             IsActive = false,
             MemberId = memberId,
@@ -48,23 +49,9 @@ public sealed class User : Entity
         };
     }
 
-    /// <summary>Creates an already-active user linked to an existing Member (used in data migrations).</summary>
-    public static User CreateLinked(Guid existingId, string email, Guid memberId, DateTime createdAt)
-    {
-        return new User
-        {
-            Id = existingId,
-            Email = email.ToLowerInvariant(),
-            Role = UserRole.Member,
-            IsActive = true,
-            MemberId = memberId,
-            CreatedAt = createdAt
-        };
-    }
-
     public Guid GenerateInviteToken(TimeSpan? expiry = null)
     {
-        InviteToken = Guid.NewGuid();
+        InviteToken = Guid.CreateVersion7();
         InviteTokenExpiresAt = DateTime.UtcNow.Add(expiry ?? TimeSpan.FromHours(72));
         return InviteToken.Value;
     }

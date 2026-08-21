@@ -53,6 +53,6 @@ internal sealed class UserContext(IHttpContextAccessor httpContextAccessor) : IU
     }
 
     public bool IsSuperAdmin => Role == UserRole.SuperAdmin;
-    public bool IsAdmin => Role == UserRole.Admin || IsSuperAdmin;
+    public bool IsAdmin => Role == UserRole.Admin;
     public bool IsMember => Role == UserRole.Member;
 }

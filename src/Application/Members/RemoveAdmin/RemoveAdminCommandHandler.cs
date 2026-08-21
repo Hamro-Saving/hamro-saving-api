@@ -5,12 +5,12 @@ using HamroSavings.Domain.Users;
 using HamroSavings.SharedKernel;
 using Microsoft.EntityFrameworkCore;
 
-namespace HamroSavings.Application.Members.AssignAdmin;
+namespace HamroSavings.Application.Members.RemoveAdmin;
 
-internal sealed class AssignAdminCommandHandler(IApplicationDbContext dbContext)
-    : ICommandHandler<AssignAdminCommand>
+internal sealed class RemoveAdminCommandHandler(IApplicationDbContext dbContext)
+    : ICommandHandler<RemoveAdminCommand>
 {
-    public async Task<Result> Handle(AssignAdminCommand command, CancellationToken cancellationToken = default)
+    public async Task<Result> Handle(RemoveAdminCommand command, CancellationToken cancellationToken = default)
     {
         var member = await dbContext.Members
             .FirstOrDefaultAsync(m => m.Id == command.MemberId && m.IsActive, cancellationToken);
@@ -18,20 +18,16 @@ internal sealed class AssignAdminCommandHandler(IApplicationDbContext dbContext)
         if (member is null)
             return Result.Failure(MemberErrors.NotFound(command.MemberId));
 
-        // NonMembers cannot be assigned as admin
-        if (member.MembershipType == MembershipType.NonMember)
-            return Result.Failure(UserErrors.Unauthorized);
-
         var user = await dbContext.Users
             .FirstOrDefaultAsync(u => u.MemberId == command.MemberId, cancellationToken);
 
         if (user is null)
             return Result.Failure(MemberErrors.NotFound(command.MemberId));
 
-        if (user.Role == UserRole.Admin)
-            return Result.Success();
+        if (user.Role != UserRole.Admin)
+            return Result.Failure(UserErrors.Unauthorized);
 
-        user.ChangeRole(UserRole.Admin);
+        user.ChangeRole(UserRole.Member);
 
         await dbContext.SaveChangesAsync(cancellationToken);
         return Result.Success();

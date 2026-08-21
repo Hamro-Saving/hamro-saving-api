@@ -11,6 +11,8 @@ public sealed class Group : Entity
     public bool IsActive { get; private set; } = true;
     public decimal MemberInterestRate { get; private set; } = 10m;
     public decimal NonMemberInterestRate { get; private set; } = 18m;
+    public DateTime? ValidFrom { get; private set; }
+    public DateTime? ValidTo { get; private set; }
     public DateTime CreatedAt { get; private set; }
     public DateTime UpdatedAt { get; private set; }
 
@@ -45,6 +47,14 @@ public sealed class Group : Entity
         Description = description;
         MemberInterestRate = memberRate;
         NonMemberInterestRate = nonMemberRate;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void SetValidity(bool isActive, DateTime? validFrom, DateTime? validTo)
+    {
+        IsActive = isActive;
+        ValidFrom = validFrom;
+        ValidTo = validTo;
         UpdatedAt = DateTime.UtcNow;
     }
 

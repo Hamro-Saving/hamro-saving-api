@@ -15,6 +15,7 @@ namespace HamroSavings.Application.Members.Create;
 internal sealed class CreateMemberCommandHandler(
     IApplicationDbContext dbContext,
     IUserContext userContext,
+    IPasswordHasher passwordHasher,
     IEmailService emailService,
     IOptions<FrontendSettings> frontendSettings)
     : ICommandHandler<CreateMemberCommand, Guid>
@@ -53,7 +54,7 @@ internal sealed class CreateMemberCommandHandler(
             dbContext.Members.Add(member);
             await dbContext.SaveChangesAsync(cancellationToken);
 
-            var user = User.CreateForMember(member.Email!, member.Id);
+            var user = User.CreateMember(member.Email!, member.Id, passwordHasher.Hash(Guid.NewGuid().ToString()));
             var inviteToken = user.GenerateInviteToken();
             dbContext.Users.Add(user);
             await dbContext.SaveChangesAsync(cancellationToken);
