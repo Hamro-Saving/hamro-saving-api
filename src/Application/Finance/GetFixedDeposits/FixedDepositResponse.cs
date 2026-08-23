@@ -13,4 +13,7 @@ public sealed record FixedDepositResponse(
     DateTime MaturityDate,
     FixedDepositStatus Status,
     string? Notes,
+    // Set once the deposit has been withdrawn
+    decimal? InterestEarned,
+    DateTime? WithdrawnAt,
     DateTime CreatedAt);

@@ -49,15 +49,25 @@ internal sealed class GetFinancialSummaryQueryHandler(
             paymentsQuery = paymentsQuery.Where(p => loanIds.Contains(p.LoanId));
         }
 
-        var totalInterestCollected = await paymentsQuery
+        var loanInterestCollected = await paymentsQuery
             .Where(p => p.IsVerified)
             .SumAsync(p => (decimal?)p.InterestAmount, cancellationToken) ?? 0;
+
+        // Interest a withdrawn fixed deposit actually paid out is income too, and without it
+        // that money would disappear from the books the moment the deposit is closed.
+        var fixedDepositInterest = await fixedDepositsQuery
+            .Where(fd => fd.Status == FixedDepositStatus.Withdrawn)
+            .SumAsync(fd => fd.InterestEarned, cancellationToken) ?? 0;
+
+        var totalInterestCollected = loanInterestCollected + fixedDepositInterest;
 
         var totalExpenses = await expensesQuery
             .SumAsync(e => (decimal?)e.Amount, cancellationToken) ?? 0;
 
+        // Matured money is still sitting with the institution until it is withdrawn,
+        // so it stays in the fixed-deposit bucket and out of in-hand cash.
         var totalFixedDeposits = await fixedDepositsQuery
-            .Where(fd => fd.Status == FixedDepositStatus.Active)
+            .Where(fd => fd.Status != FixedDepositStatus.Withdrawn)
             .SumAsync(fd => (decimal?)fd.Amount, cancellationToken) ?? 0;
 
         var inHandCash = totalSavings + totalInterestCollected - totalOnLoan - totalExpenses - totalFixedDeposits;

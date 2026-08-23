@@ -16,7 +16,25 @@ public sealed class FixedDeposit : Entity
     public Guid CreatedById { get; private set; }
     public DateTime CreatedAt { get; private set; }
 
+    /// <summary>Interest the institution actually paid out, which need not match the expected figure.</summary>
+    public decimal? InterestEarned { get; private set; }
+
+    public DateTime? WithdrawnAt { get; private set; }
+    public Guid? WithdrawnById { get; private set; }
+
     public decimal ExpectedMaturityAmount => Amount + (Amount * InterestRate / 100);
+
+    /// <summary>The maturity date has come around, whether or not anyone has recorded it.</summary>
+    public bool HasMatured(DateTime asOf) => asOf.Date >= MaturityDate.Date;
+
+    /// <summary>
+    /// The status as the world actually sees it: a deposit stops being active the day it
+    /// matures, even though nothing has been withdrawn yet.
+    /// </summary>
+    public FixedDepositStatus StatusAsOf(DateTime asOf) =>
+        Status == FixedDepositStatus.Active && HasMatured(asOf)
+            ? FixedDepositStatus.Matured
+            : Status;
 
     private FixedDeposit() { }
 
@@ -47,5 +65,26 @@ public sealed class FixedDeposit : Entity
     }
 
     public void MarkAsMatured() => Status = FixedDepositStatus.Matured;
-    public void MarkAsWithdrawn() => Status = FixedDepositStatus.Withdrawn;
+
+    /// <summary>
+    /// The money is back with the group. The interest is whatever the institution actually
+    /// paid — early withdrawals often return less than the expected amount.
+    /// </summary>
+    public Result Withdraw(decimal interestEarned, DateTime withdrawnAt, Guid withdrawnById)
+    {
+        if (Status == FixedDepositStatus.Withdrawn)
+            return Result.Failure(FixedDepositErrors.AlreadyWithdrawn);
+
+        if (interestEarned < 0)
+            return Result.Failure(FixedDepositErrors.NegativeInterest);
+
+        if (withdrawnAt.Date < StartDate.Date)
+            return Result.Failure(FixedDepositErrors.WithdrawnBeforeStart);
+
+        Status = FixedDepositStatus.Withdrawn;
+        InterestEarned = interestEarned;
+        WithdrawnAt = withdrawnAt;
+        WithdrawnById = withdrawnById;
+        return Result.Success();
+    }
 }

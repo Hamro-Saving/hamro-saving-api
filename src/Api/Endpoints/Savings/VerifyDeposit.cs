@@ -9,7 +9,7 @@ public sealed class VerifyDeposit : IEndpoint
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapPatch("deposits/{id:guid}/verify", async (
+        app.MapPut("deposits/{id:guid}/verify", async (
             Guid id,
             ICommandHandler<VerifyDepositCommand> handler,
             CancellationToken ct) =>
@@ -24,4 +24,3 @@ public sealed class VerifyDeposit : IEndpoint
         .WithSummary("Verify a deposit (Admin/SuperAdmin only)");
     }
 }
-

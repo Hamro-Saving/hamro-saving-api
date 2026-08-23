@@ -26,6 +26,9 @@ internal sealed class FixedDepositConfiguration : IEntityTypeConfiguration<Fixed
             .IsRequired()
             .HasConversion<string>();
 
+        builder.Property(fd => fd.InterestEarned)
+            .HasPrecision(18, 2);
+
         builder.Property(fd => fd.Notes)
             .HasMaxLength(500);
 

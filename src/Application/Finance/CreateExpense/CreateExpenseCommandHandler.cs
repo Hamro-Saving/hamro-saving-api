@@ -17,21 +17,21 @@ internal sealed class CreateExpenseCommandHandler(
 {
     public async Task<Result<Guid>> Handle(CreateExpenseCommand command, CancellationToken cancellationToken = default)
     {
-        if (!userContext.IsSuperAdmin && userContext.GroupId != command.GroupId)
-        {
-            return Result.Failure<Guid>(UserErrors.NotInGroup);
-        }
+        // Admins and members act in the group on their token; only a SuperAdmin names one
+        var groupResult = userContext.ResolveGroupId(command.GroupId);
+        if (groupResult.IsFailure) return Result.Failure<Guid>(groupResult.Error);
+        var groupId = groupResult.Value;
 
         var group = await dbContext.Groups
-            .FirstOrDefaultAsync(g => g.Id == command.GroupId, cancellationToken);
+            .FirstOrDefaultAsync(g => g.Id == groupId, cancellationToken);
 
         if (group is null)
         {
-            return Result.Failure<Guid>(GroupErrors.NotFound(command.GroupId));
+            return Result.Failure<Guid>(GroupErrors.NotFound(groupId));
         }
 
         var expense = Expense.Create(
-            command.GroupId,
+            groupId,
             command.Amount,
             command.Category,
             command.Description,

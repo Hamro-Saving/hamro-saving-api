@@ -18,10 +18,10 @@ internal sealed class RecordLoanPaymentCommandHandler(
         if (!userContext.IsAdmin && !userContext.IsSuperAdmin)
             return Result.Failure<Guid>(UserErrors.Unauthorized);
 
-        if (!userContext.IsSuperAdmin && userContext.GroupId != command.GroupId)
-        {
-            return Result.Failure<Guid>(UserErrors.NotInGroup);
-        }
+        // Admins and members act in the group on their token; only a SuperAdmin names one
+        var groupResult = userContext.ResolveGroupId(command.GroupId);
+        if (groupResult.IsFailure) return Result.Failure<Guid>(groupResult.Error);
+        var groupId = groupResult.Value;
 
         var loan = await dbContext.Loans
             .FirstOrDefaultAsync(l => l.Id == command.LoanId, cancellationToken);
@@ -31,7 +31,7 @@ internal sealed class RecordLoanPaymentCommandHandler(
             return Result.Failure<Guid>(LoanErrors.NotFound(command.LoanId));
         }
 
-        if (!userContext.IsSuperAdmin && loan.GroupId != command.GroupId)
+        if (!userContext.IsSuperAdmin && loan.GroupId != groupId)
         {
             return Result.Failure<Guid>(LoanErrors.NotInGroup);
         }

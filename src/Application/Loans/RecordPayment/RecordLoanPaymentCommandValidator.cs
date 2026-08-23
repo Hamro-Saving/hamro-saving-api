@@ -9,9 +9,6 @@ public sealed class RecordLoanPaymentCommandValidator : AbstractValidator<Record
         RuleFor(x => x.LoanId)
             .NotEmpty().WithMessage("Loan ID is required.");
 
-        RuleFor(x => x.GroupId)
-            .NotEmpty().WithMessage("Group ID is required.");
-
         RuleFor(x => x.PrincipalAmount)
             .GreaterThanOrEqualTo(0).WithMessage("Principal amount must be non-negative.");
 

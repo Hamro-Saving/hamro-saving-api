@@ -22,14 +22,16 @@ internal sealed class CreateMemberCommandHandler(
 {
     public async Task<Result<Guid>> Handle(CreateMemberCommand command, CancellationToken cancellationToken = default)
     {
-        if (!userContext.IsSuperAdmin && userContext.GroupId != command.GroupId)
-            return Result.Failure<Guid>(UserErrors.NotInGroup);
+        // Admins and members act in the group on their token; only a SuperAdmin names one
+        var groupResult = userContext.ResolveGroupId(command.GroupId);
+        if (groupResult.IsFailure) return Result.Failure<Guid>(groupResult.Error);
+        var groupId = groupResult.Value;
 
         var group = await dbContext.Groups
-            .FirstOrDefaultAsync(g => g.Id == command.GroupId, cancellationToken);
+            .FirstOrDefaultAsync(g => g.Id == groupId, cancellationToken);
 
         if (group is null)
-            return Result.Failure<Guid>(GroupErrors.NotFound(command.GroupId));
+            return Result.Failure<Guid>(GroupErrors.NotFound(groupId));
 
         if (!group.IsActive)
             return Result.Failure<Guid>(GroupErrors.NotActive);
@@ -38,7 +40,7 @@ internal sealed class CreateMemberCommandHandler(
         {
             bool emailExists = await dbContext.Members
                 .AnyAsync(m => m.Email == command.Email!.ToLowerInvariant()
-                            && m.GroupId == command.GroupId
+                            && m.GroupId == groupId
                             && m.MembershipType == MembershipType.Member, cancellationToken);
 
             if (emailExists)
@@ -49,7 +51,7 @@ internal sealed class CreateMemberCommandHandler(
                 command.LastName!,
                 command.Email!,
                 command.PhoneNumber,
-                command.GroupId);
+                groupId);
 
             dbContext.Members.Add(member);
             await dbContext.SaveChangesAsync(cancellationToken);
@@ -71,7 +73,7 @@ internal sealed class CreateMemberCommandHandler(
                 command.Email,
                 command.PhoneNumber,
                 command.Address,
-                command.GroupId);
+                groupId);
 
             dbContext.Members.Add(member);
             await dbContext.SaveChangesAsync(cancellationToken);

@@ -35,7 +35,7 @@ public sealed class CreateFixedDeposit : IEndpoint
 }
 
 public sealed record CreateFixedDepositRequest(
-    Guid GroupId,
+    Guid? GroupId,
     string InstitutionName,
     decimal Amount,
     decimal InterestRate,

@@ -8,7 +8,7 @@ namespace HamroSavings.Application.Loans.RecordPayment;
 /// </summary>
 public sealed record RecordLoanPaymentCommand(
     Guid LoanId,
-    Guid GroupId,
+    Guid? GroupId,
     decimal PrincipalAmount,
     decimal InterestAmount,
     DateTime PaidDate,

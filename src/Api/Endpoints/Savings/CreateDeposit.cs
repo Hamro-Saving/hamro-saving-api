@@ -38,7 +38,7 @@ public sealed class CreateDeposit : IEndpoint
 
 public sealed record CreateDepositRequest(
     Guid MemberId,
-    Guid GroupId,
+    Guid? GroupId,
     decimal Amount,
     int DepositMonth,
     int DepositYear,
