@@ -18,15 +18,23 @@ public sealed class LoanPayment : Entity
     public Guid CreatedById { get; private set; }
     public DateTime CreatedAt { get; private set; }
 
+    // --- The interest calculation this payment was settled against, frozen at that moment.
+
+    /// <summary>Interest the loan owed just before this payment was applied.</summary>
+    public decimal InterestOwedBefore { get; private set; }
+
+    /// <summary>Days of interest that had run since the loan's previous transaction.</summary>
+    public int DaysAccrued { get; private set; }
+
+    public decimal OutstandingPrincipalAfter { get; private set; }
+    public decimal UnpaidInterestAfter { get; private set; }
+
     private LoanPayment() { }
 
     public static LoanPayment Create(
         Guid loanId,
-        decimal amount,
-        decimal principalAmount,
-        decimal interestAmount,
         DateTime paidDate,
-        LoanPaymentType paymentType,
+        LoanPaymentAllocation allocation,
         string? notes,
         Guid createdById)
     {
@@ -34,17 +42,26 @@ public sealed class LoanPayment : Entity
         {
             Id = Guid.CreateVersion7(),
             LoanId = loanId,
-            Amount = amount,
-            PrincipalAmount = principalAmount,
-            InterestAmount = interestAmount,
+            Amount = allocation.PrincipalPaid + allocation.InterestPaid,
+            PrincipalAmount = allocation.PrincipalPaid,
+            InterestAmount = allocation.InterestPaid,
             PaidDate = paidDate,
-            PaymentType = paymentType,
+            PaymentType = TypeOf(allocation),
             Notes = notes,
             IsVerified = false,
             CreatedById = createdById,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
+            InterestOwedBefore = allocation.InterestOwedBefore,
+            DaysAccrued = allocation.DaysAccrued,
+            OutstandingPrincipalAfter = allocation.OutstandingPrincipalAfter,
+            UnpaidInterestAfter = allocation.UnpaidInterestAfter
         };
     }
+
+    private static LoanPaymentType TypeOf(LoanPaymentAllocation allocation) =>
+        allocation.PrincipalPaid > 0 && allocation.InterestPaid > 0 ? LoanPaymentType.Mixed
+        : allocation.InterestPaid > 0 ? LoanPaymentType.Interest
+        : LoanPaymentType.Principal;
 
     public Result Verify(Guid verifiedById)
     {

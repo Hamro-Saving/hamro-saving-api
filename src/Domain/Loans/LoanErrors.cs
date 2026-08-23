@@ -13,6 +13,18 @@ public static class LoanErrors
     public static readonly Error NotActive =
         Error.Problem("Loan.NotActive", "Loan is not active.");
 
+    public static readonly Error PaymentBeforeLastTransaction =
+        Error.Problem("Loan.PaymentBeforeLastTransaction", "A payment cannot be dated before the loan's last settled transaction.");
+
+    public static readonly Error PaymentInFuture =
+        Error.Problem("Loan.PaymentInFuture", "A payment cannot be dated in the future.");
+
+    public static readonly Error InterestExceedsAccrued =
+        Error.Problem("Loan.InterestExceedsAccrued", "The interest paid is more than the interest accrued on this loan by that date.");
+
+    public static readonly Error PrincipalExceedsOutstanding =
+        Error.Problem("Loan.PrincipalExceedsOutstanding", "The principal paid is more than the principal still outstanding.");
+
     public static readonly Error PaymentAlreadyVerified =
         Error.Conflict("LoanPayment.AlreadyVerified", "This payment has already been verified.");
 

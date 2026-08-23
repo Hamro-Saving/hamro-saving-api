@@ -27,7 +27,7 @@ internal sealed class CompleteDisbursementCommandHandler(
         if (!userContext.IsSuperAdmin && loan.GroupId != userContext.GroupId)
             return Result.Failure(LoanErrors.NotInGroup);
 
-        var result = loan.CompleteDisbursement(userContext.UserId);
+        var result = loan.CompleteDisbursement(userContext.UserId, DateTime.UtcNow);
         if (result.IsFailure) return result;
 
         await dbContext.SaveChangesAsync(cancellationToken);

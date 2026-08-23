@@ -99,8 +99,6 @@ internal sealed class GetLoansQueryHandler(
                 .ToList();
 
             var requiredApprovals = LoanVoting.VotesNeeded(voterCountByGroup.GetValueOrDefault(l.GroupId, 0));
-            var elapsedDays = l.Status == LoanStatus.Active ? (now - l.StartDate).Days : 0;
-            var accruedInterest = l.Amount * (l.InterestRate / 100m) * elapsedDays / 365m;
 
             return new LoanResponse(
                 l.Id,
@@ -110,9 +108,15 @@ internal sealed class GetLoansQueryHandler(
                 l.GroupId,
                 l.Amount,
                 l.InterestRate,
-                l.TotalInterest,
-                l.TotalDue,
-                Math.Round(accruedInterest, 2),
+                l.OutstandingPrincipal,
+                l.InterestAccruedAsOf(now),
+                l.PayoffAmountAsOf(now),
+                l.DailyInterest,
+                l.UnpaidInterest,
+                l.TotalPrincipalPaid,
+                l.TotalInterestPaid,
+                l.DisbursedAt,
+                l.LastAccrualDate,
                 l.StartDate,
                 l.DueDate,
                 l.Status,

@@ -32,7 +32,13 @@ internal sealed class LoanConfiguration : IEntityTypeConfiguration<Loan>
         builder.Property(l => l.CreatedAt)
             .IsRequired();
 
-        builder.Ignore(l => l.TotalInterest);
-        builder.Ignore(l => l.TotalDue);
+        builder.Property(l => l.OutstandingPrincipal).IsRequired().HasPrecision(18, 2);
+        builder.Property(l => l.UnpaidInterest).IsRequired().HasPrecision(18, 2);
+        builder.Property(l => l.TotalInterestAccrued).IsRequired().HasPrecision(18, 2);
+        builder.Property(l => l.TotalInterestPaid).IsRequired().HasPrecision(18, 2);
+        builder.Property(l => l.TotalPrincipalPaid).IsRequired().HasPrecision(18, 2);
+
+        // Interest between transactions is computed, never stored
+        builder.Ignore(l => l.DailyInterest);
     }
 }

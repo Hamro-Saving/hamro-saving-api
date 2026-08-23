@@ -26,6 +26,21 @@ internal sealed class LoanPaymentConfiguration : IEntityTypeConfiguration<LoanPa
             .IsRequired()
             .HasConversion<string>();
 
+        builder.Property(p => p.InterestOwedBefore)
+            .IsRequired()
+            .HasPrecision(18, 2);
+
+        builder.Property(p => p.OutstandingPrincipalAfter)
+            .IsRequired()
+            .HasPrecision(18, 2);
+
+        builder.Property(p => p.UnpaidInterestAfter)
+            .IsRequired()
+            .HasPrecision(18, 2);
+
+        builder.Property(p => p.DaysAccrued)
+            .IsRequired();
+
         builder.Property(p => p.Notes)
             .HasMaxLength(500);
 

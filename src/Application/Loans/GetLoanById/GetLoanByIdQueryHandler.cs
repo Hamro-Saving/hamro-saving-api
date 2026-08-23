@@ -68,8 +68,7 @@ internal sealed class GetLoanByIdQueryHandler(
             .CountAsync(m => m.GroupId == loan.GroupId, cancellationToken);
 
         var requiredApprovals = LoanVoting.VotesNeeded(totalVoters);
-        var elapsedDays = loan.Status == LoanStatus.Active ? (DateTime.UtcNow - loan.StartDate).Days : 0;
-        var accruedInterest = Math.Round(loan.Amount * (loan.InterestRate / 100m) * elapsedDays / 365m, 2);
+        var now = DateTime.UtcNow;
 
         return Result.Success(new LoanResponse(
             loan.Id,
@@ -79,9 +78,15 @@ internal sealed class GetLoanByIdQueryHandler(
             loan.GroupId,
             loan.Amount,
             loan.InterestRate,
-            loan.TotalInterest,
-            loan.TotalDue,
-            accruedInterest,
+            loan.OutstandingPrincipal,
+            loan.InterestAccruedAsOf(now),
+            loan.PayoffAmountAsOf(now),
+            loan.DailyInterest,
+            loan.UnpaidInterest,
+            loan.TotalPrincipalPaid,
+            loan.TotalInterestPaid,
+            loan.DisbursedAt,
+            loan.LastAccrualDate,
             loan.StartDate,
             loan.DueDate,
             loan.Status,

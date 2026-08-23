@@ -2,7 +2,6 @@ using HamroSavings.Api.Extensions;
 using HamroSavings.Api.Infrastructure;
 using HamroSavings.Application.Abstractions.Messaging;
 using HamroSavings.Application.Loans.RecordPayment;
-using HamroSavings.Domain.Loans;
 
 namespace HamroSavings.Api.Endpoints.Loans;
 
@@ -19,11 +18,9 @@ public sealed class RecordLoanPayment : IEndpoint
             var command = new RecordLoanPaymentCommand(
                 id,
                 request.GroupId,
-                request.Amount,
                 request.PrincipalAmount,
                 request.InterestAmount,
                 request.PaidDate,
-                request.PaymentType,
                 request.Notes);
 
             var result = await handler.Handle(command, ct);
@@ -33,15 +30,13 @@ public sealed class RecordLoanPayment : IEndpoint
         })
         .WithTags("Loans")
         .RequireAuthorization()
-        .WithSummary("Record a loan payment");
+        .WithSummary("Record a loan payment, settling interest up to its date");
     }
 }
 
 public sealed record RecordPaymentRequest(
     Guid GroupId,
-    decimal Amount,
     decimal PrincipalAmount,
     decimal InterestAmount,
     DateTime PaidDate,
-    LoanPaymentType PaymentType,
     string? Notes);

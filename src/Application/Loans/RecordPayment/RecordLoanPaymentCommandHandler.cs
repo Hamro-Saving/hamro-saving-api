@@ -36,33 +36,26 @@ internal sealed class RecordLoanPaymentCommandHandler(
             return Result.Failure<Guid>(LoanErrors.NotInGroup);
         }
 
-        if (loan.Status != LoanStatus.Active && loan.Status != LoanStatus.Overdue)
+        if (command.PaidDate.Date > DateTime.UtcNow.Date)
         {
-            return Result.Failure<Guid>(LoanErrors.NotActive);
+            return Result.Failure<Guid>(LoanErrors.PaymentInFuture);
+        }
+
+        // The loan settles its own interest up to this date and tells us what the payment covered
+        var allocation = loan.RecordPayment(command.PaidDate, command.PrincipalAmount, command.InterestAmount);
+        if (allocation.IsFailure)
+        {
+            return Result.Failure<Guid>(allocation.Error);
         }
 
         var payment = LoanPayment.Create(
             command.LoanId,
-            command.Amount,
-            command.PrincipalAmount,
-            command.InterestAmount,
             command.PaidDate,
-            command.PaymentType,
+            allocation.Value,
             command.Notes,
             userContext.UserId);
 
         dbContext.LoanPayments.Add(payment);
-
-        var totalPaid = await dbContext.LoanPayments
-            .Where(p => p.LoanId == command.LoanId)
-            .SumAsync(p => p.PrincipalAmount, cancellationToken);
-
-        totalPaid += command.PrincipalAmount;
-
-        if (totalPaid >= loan.Amount)
-        {
-            loan.MarkAsPaidOff();
-        }
 
         await dbContext.SaveChangesAsync(cancellationToken);
 
