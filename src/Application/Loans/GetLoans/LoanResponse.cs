@@ -19,9 +19,12 @@ public sealed record LoanResponse(
     DateTime? DueDate,
     LoanStatus Status,
     string? Notes,
-    Guid? ApprovedById,
+    Guid? DisbursedById,
     int ApprovalCount,
+    int DeclineCount,
     int RequiredApprovals,
     bool HasCurrentUserApproved,
+    bool HasCurrentUserDeclined,
     List<ApproverInfo> Approvers,
+    List<ApproverInfo> Decliners,
     DateTime CreatedAt);
