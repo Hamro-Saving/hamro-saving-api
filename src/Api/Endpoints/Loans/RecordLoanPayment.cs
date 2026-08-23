@@ -35,7 +35,7 @@ public sealed class RecordLoanPayment : IEndpoint
 }
 
 public sealed record RecordPaymentRequest(
-    Guid GroupId,
+    Guid? GroupId,
     decimal PrincipalAmount,
     decimal InterestAmount,
     DateTime PaidDate,

@@ -33,7 +33,7 @@ public sealed class CreateExpense : IEndpoint
 }
 
 public sealed record CreateExpenseRequest(
-    Guid GroupId,
+    Guid? GroupId,
     decimal Amount,
     string Category,
     string Description,

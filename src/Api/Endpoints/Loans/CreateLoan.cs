@@ -38,7 +38,7 @@ public sealed class CreateLoan : IEndpoint
 public sealed record CreateLoanRequest(
     Guid BorrowerId,
     string BorrowerType,
-    Guid GroupId,
+    Guid? GroupId,
     decimal Amount,
     decimal? InterestRate,
     DateTime StartDate,

@@ -6,9 +6,6 @@ public sealed class CreateExpenseCommandValidator : AbstractValidator<CreateExpe
 {
     public CreateExpenseCommandValidator()
     {
-        RuleFor(x => x.GroupId)
-            .NotEmpty().WithMessage("Group ID is required.");
-
         RuleFor(x => x.Amount)
             .GreaterThan(0).WithMessage("Amount must be greater than zero.");
 

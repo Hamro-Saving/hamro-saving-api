@@ -3,7 +3,7 @@ using HamroSavings.Application.Abstractions.Messaging;
 namespace HamroSavings.Application.Finance.CreateFixedDeposit;
 
 public sealed record CreateFixedDepositCommand(
-    Guid GroupId,
+    Guid? GroupId,
     string InstitutionName,
     decimal Amount,
     decimal InterestRate,

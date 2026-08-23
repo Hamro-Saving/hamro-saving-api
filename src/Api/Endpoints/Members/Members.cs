@@ -89,4 +89,4 @@ public sealed record CreateMemberRequest(
     string? Email,
     string? PhoneNumber,
     string? Address,
-    Guid GroupId);
+    Guid? GroupId);

@@ -6,9 +6,6 @@ public sealed class CreateFixedDepositCommandValidator : AbstractValidator<Creat
 {
     public CreateFixedDepositCommandValidator()
     {
-        RuleFor(x => x.GroupId)
-            .NotEmpty().WithMessage("Group ID is required.");
-
         RuleFor(x => x.InstitutionName)
             .NotEmpty().WithMessage("Institution name is required.")
             .MaximumLength(200).WithMessage("Institution name must not exceed 200 characters.");

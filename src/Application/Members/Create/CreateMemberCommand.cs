@@ -10,4 +10,4 @@ public sealed record CreateMemberCommand(
     string? Email,
     string? PhoneNumber,
     string? Address,
-    Guid GroupId) : ICommand<Guid>;
+    Guid? GroupId = null) : ICommand<Guid>;

@@ -21,4 +21,13 @@ public static class FixedDepositErrors
 
     public static readonly Error AlreadyClosed =
         Error.Problem("FixedDeposit.AlreadyClosed", "Fixed deposit is already matured or withdrawn.");
+
+    public static readonly Error AlreadyWithdrawn =
+        Error.Conflict("FixedDeposit.AlreadyWithdrawn", "This fixed deposit has already been withdrawn.");
+
+    public static readonly Error NegativeInterest =
+        Error.Problem("FixedDeposit.NegativeInterest", "Interest returned cannot be negative.");
+
+    public static readonly Error WithdrawnBeforeStart =
+        Error.Problem("FixedDeposit.WithdrawnBeforeStart", "A withdrawal cannot be dated before the deposit started.");
 }
