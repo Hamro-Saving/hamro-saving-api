@@ -17,10 +17,10 @@ internal sealed class CreateLoanCommandHandler(
 {
     public async Task<Result<Guid>> Handle(CreateLoanCommand command, CancellationToken cancellationToken = default)
     {
-        if (!userContext.IsSuperAdmin && userContext.GroupId != command.GroupId)
-        {
-            return Result.Failure<Guid>(UserErrors.NotInGroup);
-        }
+        // Admins and members act in the group on their token; only a SuperAdmin names one
+        var groupResult = userContext.ResolveGroupId(command.GroupId);
+        if (groupResult.IsFailure) return Result.Failure<Guid>(groupResult.Error);
+        var groupId = groupResult.Value;
 
         // Members (non-admin) can only apply for themselves
         if (!userContext.IsAdmin && !userContext.IsSuperAdmin)
@@ -30,18 +30,18 @@ internal sealed class CreateLoanCommandHandler(
         }
 
         var group = await dbContext.Groups
-            .FirstOrDefaultAsync(g => g.Id == command.GroupId, cancellationToken);
+            .FirstOrDefaultAsync(g => g.Id == groupId, cancellationToken);
 
         if (group is null)
         {
-            return Result.Failure<Guid>(GroupErrors.NotFound(command.GroupId));
+            return Result.Failure<Guid>(GroupErrors.NotFound(groupId));
         }
 
         decimal interestRate;
         if (command.BorrowerType == "Member")
         {
             var memberExists = await dbContext.Members
-                .AnyAsync(m => m.Id == command.BorrowerId && m.GroupId == command.GroupId, cancellationToken);
+                .AnyAsync(m => m.Id == command.BorrowerId && m.GroupId == groupId, cancellationToken);
             if (!memberExists)
             {
                 return Result.Failure<Guid>(MemberErrors.NotFound(command.BorrowerId));
@@ -53,7 +53,7 @@ internal sealed class CreateLoanCommandHandler(
         else if (command.BorrowerType == "NonMember")
         {
             var nonMemberExists = await dbContext.Members
-                .AnyAsync(nm => nm.Id == command.BorrowerId && nm.GroupId == command.GroupId && nm.MembershipType == Domain.Members.MembershipType.NonMember, cancellationToken);
+                .AnyAsync(nm => nm.Id == command.BorrowerId && nm.GroupId == groupId && nm.MembershipType == Domain.Members.MembershipType.NonMember, cancellationToken);
             if (!nonMemberExists)
             {
                 return Result.Failure<Guid>(MemberErrors.NotFound(command.BorrowerId));
@@ -70,7 +70,7 @@ internal sealed class CreateLoanCommandHandler(
         var loan = Loan.Create(
             command.BorrowerId,
             command.BorrowerType,
-            command.GroupId,
+            groupId,
             command.Amount,
             interestRate,
             command.StartDate,

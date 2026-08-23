@@ -18,10 +18,10 @@ internal sealed class RecordLoanPaymentCommandHandler(
         if (!userContext.IsAdmin && !userContext.IsSuperAdmin)
             return Result.Failure<Guid>(UserErrors.Unauthorized);
 
-        if (!userContext.IsSuperAdmin && userContext.GroupId != command.GroupId)
-        {
-            return Result.Failure<Guid>(UserErrors.NotInGroup);
-        }
+        // Admins and members act in the group on their token; only a SuperAdmin names one
+        var groupResult = userContext.ResolveGroupId(command.GroupId);
+        if (groupResult.IsFailure) return Result.Failure<Guid>(groupResult.Error);
+        var groupId = groupResult.Value;
 
         var loan = await dbContext.Loans
             .FirstOrDefaultAsync(l => l.Id == command.LoanId, cancellationToken);
@@ -31,38 +31,31 @@ internal sealed class RecordLoanPaymentCommandHandler(
             return Result.Failure<Guid>(LoanErrors.NotFound(command.LoanId));
         }
 
-        if (!userContext.IsSuperAdmin && loan.GroupId != command.GroupId)
+        if (!userContext.IsSuperAdmin && loan.GroupId != groupId)
         {
             return Result.Failure<Guid>(LoanErrors.NotInGroup);
         }
 
-        if (loan.Status != LoanStatus.Active && loan.Status != LoanStatus.Overdue)
+        if (command.PaidDate.Date > DateTime.UtcNow.Date)
         {
-            return Result.Failure<Guid>(LoanErrors.NotActive);
+            return Result.Failure<Guid>(LoanErrors.PaymentInFuture);
+        }
+
+        // The loan settles its own interest up to this date and tells us what the payment covered
+        var allocation = loan.RecordPayment(command.PaidDate, command.PrincipalAmount, command.InterestAmount);
+        if (allocation.IsFailure)
+        {
+            return Result.Failure<Guid>(allocation.Error);
         }
 
         var payment = LoanPayment.Create(
             command.LoanId,
-            command.Amount,
-            command.PrincipalAmount,
-            command.InterestAmount,
             command.PaidDate,
-            command.PaymentType,
+            allocation.Value,
             command.Notes,
             userContext.UserId);
 
         dbContext.LoanPayments.Add(payment);
-
-        var totalPaid = await dbContext.LoanPayments
-            .Where(p => p.LoanId == command.LoanId)
-            .SumAsync(p => p.PrincipalAmount, cancellationToken);
-
-        totalPaid += command.PrincipalAmount;
-
-        if (totalPaid >= loan.Amount)
-        {
-            loan.MarkAsPaidOff();
-        }
 
         await dbContext.SaveChangesAsync(cancellationToken);
 

@@ -36,20 +36,14 @@ internal sealed class GetLoanByIdQueryHandler(
             .FirstOrDefaultAsync(cancellationToken);
         var borrowerName = borrower?.Name ?? "Unknown";
 
-        var approvalCount = await dbContext.LoanApprovals
-            .CountAsync(a => a.LoanId == loan.Id, cancellationToken);
-
-        var hasCurrentUserApproved = await dbContext.LoanApprovals
-            .AnyAsync(a => a.LoanId == loan.Id && a.ApproverId == userContext.UserId, cancellationToken);
-
-        var approvals = await dbContext.LoanApprovals
+        var votes = await dbContext.LoanApprovals
             .Where(a => a.LoanId == loan.Id)
-            .Select(a => new { a.ApproverId, a.ApprovedAt })
+            .Select(a => new { a.ApproverId, a.IsApproved, a.ApprovedAt })
             .ToListAsync(cancellationToken);
 
-        var approverIds = approvals.Select(a => a.ApproverId).ToList();
-        var approverNames = await dbContext.Users
-            .Where(u => approverIds.Contains(u.Id))
+        var voterIds = votes.Select(a => a.ApproverId).ToList();
+        var voterNames = await dbContext.Users
+            .Where(u => voterIds.Contains(u.Id))
             .Select(u => new
             {
                 u.Id,
@@ -59,18 +53,22 @@ internal sealed class GetLoanByIdQueryHandler(
                     .FirstOrDefault() ?? "Unknown"
             })
             .ToListAsync(cancellationToken);
-        var approverDict = approverNames.ToDictionary(u => u.Id, u => u.Name);
+        var voterDict = voterNames.ToDictionary(u => u.Id, u => u.Name);
 
-        var approverList = approvals
-            .Select(a => new ApproverInfo(a.ApproverId, approverDict.GetValueOrDefault(a.ApproverId, "Unknown"), a.ApprovedAt))
+        var approverList = votes
+            .Where(v => v.IsApproved)
+            .Select(v => new ApproverInfo(v.ApproverId, voterDict.GetValueOrDefault(v.ApproverId, "Unknown"), v.ApprovedAt))
+            .ToList();
+        var declinerList = votes
+            .Where(v => !v.IsApproved)
+            .Select(v => new ApproverInfo(v.ApproverId, voterDict.GetValueOrDefault(v.ApproverId, "Unknown"), v.ApprovedAt))
             .ToList();
 
-        var totalGroupMembers = await dbContext.Members
-            .CountAsync(m => m.GroupId == loan.GroupId && m.MembershipType == Domain.Members.MembershipType.Member, cancellationToken);
+        var totalVoters = await LoanVoting.EligibleVoters(dbContext)
+            .CountAsync(m => m.GroupId == loan.GroupId, cancellationToken);
 
-        var requiredApprovals = (int)Math.Ceiling(totalGroupMembers / 2.0);
-        var elapsedDays = loan.Status == LoanStatus.Active ? (DateTime.UtcNow - loan.StartDate).Days : 0;
-        var accruedInterest = Math.Round(loan.Amount * (loan.InterestRate / 100m) * elapsedDays / 365m, 2);
+        var requiredApprovals = LoanVoting.VotesNeeded(totalVoters);
+        var now = DateTime.UtcNow;
 
         return Result.Success(new LoanResponse(
             loan.Id,
@@ -80,18 +78,27 @@ internal sealed class GetLoanByIdQueryHandler(
             loan.GroupId,
             loan.Amount,
             loan.InterestRate,
-            loan.TotalInterest,
-            loan.TotalDue,
-            accruedInterest,
+            loan.OutstandingPrincipal,
+            loan.InterestAccruedAsOf(now),
+            loan.PayoffAmountAsOf(now),
+            loan.DailyInterest,
+            loan.UnpaidInterest,
+            loan.TotalPrincipalPaid,
+            loan.TotalInterestPaid,
+            loan.DisbursedAt,
+            loan.LastAccrualDate,
             loan.StartDate,
             loan.DueDate,
             loan.Status,
             loan.Notes,
-            loan.ApprovedById,
-            approvalCount,
+            loan.DisbursedById,
+            approverList.Count,
+            declinerList.Count,
             requiredApprovals,
-            hasCurrentUserApproved,
+            approverList.Any(a => a.ApproverId == userContext.UserId),
+            declinerList.Any(a => a.ApproverId == userContext.UserId),
             approverList,
+            declinerList,
             loan.CreatedAt));
     }
 }

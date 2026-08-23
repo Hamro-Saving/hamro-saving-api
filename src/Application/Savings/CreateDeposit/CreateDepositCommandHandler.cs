@@ -17,21 +17,21 @@ internal sealed class CreateDepositCommandHandler(
 {
     public async Task<Result<Guid>> Handle(CreateDepositCommand command, CancellationToken cancellationToken = default)
     {
-        if (!userContext.IsSuperAdmin && userContext.GroupId != command.GroupId)
-        {
-            return Result.Failure<Guid>(UserErrors.NotInGroup);
-        }
+        // Admins and members act in the group on their token; only a SuperAdmin names one
+        var groupResult = userContext.ResolveGroupId(command.GroupId);
+        if (groupResult.IsFailure) return Result.Failure<Guid>(groupResult.Error);
+        var groupId = groupResult.Value;
 
         var group = await dbContext.Groups
-            .FirstOrDefaultAsync(g => g.Id == command.GroupId, cancellationToken);
+            .FirstOrDefaultAsync(g => g.Id == groupId, cancellationToken);
 
         if (group is null)
         {
-            return Result.Failure<Guid>(GroupErrors.NotFound(command.GroupId));
+            return Result.Failure<Guid>(GroupErrors.NotFound(groupId));
         }
 
         var memberExists = await dbContext.Members
-            .AnyAsync(m => m.Id == command.MemberId && m.GroupId == command.GroupId, cancellationToken);
+            .AnyAsync(m => m.Id == command.MemberId && m.GroupId == groupId, cancellationToken);
 
         if (!memberExists)
         {
@@ -40,7 +40,7 @@ internal sealed class CreateDepositCommandHandler(
 
         var deposit = Deposit.Create(
             command.MemberId,
-            command.GroupId,
+            groupId,
             command.Amount,
             command.DepositMonth,
             command.DepositYear,

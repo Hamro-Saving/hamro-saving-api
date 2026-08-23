@@ -1,7 +1,7 @@
 using HamroSavings.Api.Extensions;
 using HamroSavings.Api.Infrastructure;
 using HamroSavings.Application.Abstractions.Messaging;
-using HamroSavings.Application.Loans.ApproveLoan;
+using HamroSavings.Application.Loans.CastVote;
 
 namespace HamroSavings.Api.Endpoints.Loans;
 
@@ -11,10 +11,10 @@ public sealed class ApproveLoan : IEndpoint
     {
         app.MapPost("loans/{id:guid}/approve", async (
             Guid id,
-            ICommandHandler<ApproveLoanCommand> handler,
+            ICommandHandler<CastLoanVoteCommand> handler,
             CancellationToken ct) =>
         {
-            var result = await handler.Handle(new ApproveLoanCommand(id), ct);
+            var result = await handler.Handle(new CastLoanVoteCommand(id, IsApproved: true), ct);
             return result.Match(
                 () => Results.NoContent(),
                 error => CustomResults.Problem(error));

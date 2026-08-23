@@ -13,6 +13,18 @@ public static class LoanErrors
     public static readonly Error NotActive =
         Error.Problem("Loan.NotActive", "Loan is not active.");
 
+    public static readonly Error PaymentBeforeLastTransaction =
+        Error.Problem("Loan.PaymentBeforeLastTransaction", "A payment cannot be dated before the loan's last settled transaction.");
+
+    public static readonly Error PaymentInFuture =
+        Error.Problem("Loan.PaymentInFuture", "A payment cannot be dated in the future.");
+
+    public static readonly Error InterestExceedsAccrued =
+        Error.Problem("Loan.InterestExceedsAccrued", "The interest paid is more than the interest accrued on this loan by that date.");
+
+    public static readonly Error PrincipalExceedsOutstanding =
+        Error.Problem("Loan.PrincipalExceedsOutstanding", "The principal paid is more than the principal still outstanding.");
+
     public static readonly Error PaymentAlreadyVerified =
         Error.Conflict("LoanPayment.AlreadyVerified", "This payment has already been verified.");
 
@@ -23,17 +35,23 @@ public static class LoanErrors
         Error.Problem("Loan.NotPending", "Loan is not in pending status.");
 
     public static readonly Error NotApproved =
-        Error.Problem("Loan.NotApproved", "Loan must be approved before it can be verified.");
+        Error.Problem("Loan.NotApproved", "Loan must be approved by the members before it can be disbursed.");
 
-    public static readonly Error AlreadyApproved =
-        Error.Conflict("Loan.AlreadyApproved", "You have already approved this loan.");
+    public static readonly Error CannotCancelAfterDisbursement =
+        Error.Problem("Loan.CannotCancelAfterDisbursement", "A loan can only be cancelled before its disbursement starts.");
 
-    public static readonly Error CannotSelfApprove =
-        Error.Problem("Loan.CannotSelfApprove", "You cannot approve your own loan request.");
+    public static readonly Error AdminCannotVote =
+        Error.Forbidden("Loan.AdminCannotVote", "Admins do not vote on loans; approval is decided by the group's members.");
+
+    public static readonly Error AlreadyVoted =
+        Error.Conflict("Loan.AlreadyVoted", "You have already voted on this loan.");
+
+    public static readonly Error NotEligibleToVote =
+        Error.Forbidden("Loan.NotEligibleToVote", "Only active group members can approve or decline loans.");
+
+    public static readonly Error CannotSelfVote =
+        Error.Problem("Loan.CannotSelfVote", "You cannot vote on your own loan request.");
 
     public static readonly Error NotInGroup =
         Error.Forbidden("Loan.NotInGroup", "Loan does not belong to this group.");
-
-    public static readonly Error ApprovalNotApplicable =
-        Error.Problem("Loan.ApprovalNotApplicable", "Approval voting only applies to member loans.");
 }

@@ -18,7 +18,7 @@ namespace HamroSavings.Infrastructure.Database.Migrations
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("public")
-                .HasAnnotation("ProductVersion", "10.0.1")
+                .HasAnnotation("ProductVersion", "10.0.11")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -103,6 +103,11 @@ namespace HamroSavings.Infrastructure.Database.Migrations
                         .HasColumnType("character varying(200)")
                         .HasColumnName("institution_name");
 
+                    b.Property<decimal?>("InterestEarned")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("interest_earned");
+
                     b.Property<decimal>("InterestRate")
                         .HasPrecision(5, 2)
                         .HasColumnType("numeric(5,2)")
@@ -125,6 +130,14 @@ namespace HamroSavings.Infrastructure.Database.Migrations
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("status");
+
+                    b.Property<DateTime?>("WithdrawnAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("withdrawn_at");
+
+                    b.Property<Guid?>("WithdrawnById")
+                        .HasColumnType("uuid")
+                        .HasColumnName("withdrawn_by_id");
 
                     b.HasKey("Id")
                         .HasName("pk_fixed_deposits");
@@ -214,10 +227,6 @@ namespace HamroSavings.Infrastructure.Database.Migrations
                         .HasColumnType("numeric(18,2)")
                         .HasColumnName("amount");
 
-                    b.Property<Guid?>("ApprovedById")
-                        .HasColumnType("uuid")
-                        .HasColumnName("approved_by_id");
-
                     b.Property<Guid>("BorrowerId")
                         .HasColumnType("uuid")
                         .HasColumnName("borrower_id");
@@ -232,6 +241,14 @@ namespace HamroSavings.Infrastructure.Database.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
+                    b.Property<DateTime?>("DisbursedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("disbursed_at");
+
+                    b.Property<Guid?>("DisbursedById")
+                        .HasColumnType("uuid")
+                        .HasColumnName("disbursed_by_id");
+
                     b.Property<DateTime?>("DueDate")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("due_date");
@@ -245,10 +262,19 @@ namespace HamroSavings.Infrastructure.Database.Migrations
                         .HasColumnType("numeric(5,2)")
                         .HasColumnName("interest_rate");
 
+                    b.Property<DateTime?>("LastAccrualDate")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("last_accrual_date");
+
                     b.Property<string>("Notes")
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)")
                         .HasColumnName("notes");
+
+                    b.Property<decimal>("OutstandingPrincipal")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("outstanding_principal");
 
                     b.Property<DateTime>("StartDate")
                         .HasColumnType("timestamp with time zone")
@@ -258,6 +284,26 @@ namespace HamroSavings.Infrastructure.Database.Migrations
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("status");
+
+                    b.Property<decimal>("TotalInterestAccrued")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("total_interest_accrued");
+
+                    b.Property<decimal>("TotalInterestPaid")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("total_interest_paid");
+
+                    b.Property<decimal>("TotalPrincipalPaid")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("total_principal_paid");
+
+                    b.Property<decimal>("UnpaidInterest")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("unpaid_interest");
 
                     b.HasKey("Id")
                         .HasName("pk_loans");
@@ -279,6 +325,12 @@ namespace HamroSavings.Infrastructure.Database.Migrations
                     b.Property<Guid>("ApproverId")
                         .HasColumnType("uuid")
                         .HasColumnName("approver_id");
+
+                    b.Property<bool>("IsApproved")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("is_approved");
 
                     b.Property<Guid>("LoanId")
                         .HasColumnType("uuid")
@@ -314,10 +366,19 @@ namespace HamroSavings.Infrastructure.Database.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("created_by_id");
 
+                    b.Property<int>("DaysAccrued")
+                        .HasColumnType("integer")
+                        .HasColumnName("days_accrued");
+
                     b.Property<decimal>("InterestAmount")
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)")
                         .HasColumnName("interest_amount");
+
+                    b.Property<decimal>("InterestOwedBefore")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("interest_owed_before");
 
                     b.Property<bool>("IsVerified")
                         .ValueGeneratedOnAdd()
@@ -334,6 +395,11 @@ namespace HamroSavings.Infrastructure.Database.Migrations
                         .HasColumnType("character varying(500)")
                         .HasColumnName("notes");
 
+                    b.Property<decimal>("OutstandingPrincipalAfter")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("outstanding_principal_after");
+
                     b.Property<DateTime>("PaidDate")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("paid_date");
@@ -347,6 +413,11 @@ namespace HamroSavings.Infrastructure.Database.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)")
                         .HasColumnName("principal_amount");
+
+                    b.Property<decimal>("UnpaidInterestAfter")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("unpaid_interest_after");
 
                     b.Property<DateTime?>("VerifiedAt")
                         .HasColumnType("timestamp with time zone")

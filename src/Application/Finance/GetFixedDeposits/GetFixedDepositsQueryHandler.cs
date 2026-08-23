@@ -27,6 +27,10 @@ internal sealed class GetFixedDepositsQueryHandler(
 
         var fixedDeposits = await fdQuery
             .OrderByDescending(fd => fd.StartDate)
+            .ToListAsync(cancellationToken);
+
+        var now = DateTime.UtcNow;
+        var response = fixedDeposits
             .Select(fd => new FixedDepositResponse(
                 fd.Id,
                 fd.GroupId,
@@ -36,11 +40,14 @@ internal sealed class GetFixedDepositsQueryHandler(
                 fd.ExpectedMaturityAmount,
                 fd.StartDate,
                 fd.MaturityDate,
-                fd.Status,
+                // Reported as matured from the maturity date on, without waiting for anyone to record it
+                fd.StatusAsOf(now),
                 fd.Notes,
+                fd.InterestEarned,
+                fd.WithdrawnAt,
                 fd.CreatedAt))
-            .ToListAsync(cancellationToken);
+            .ToList();
 
-        return Result.Success(fixedDeposits);
+        return Result.Success(response);
     }
 }

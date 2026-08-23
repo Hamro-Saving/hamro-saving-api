@@ -5,7 +5,7 @@ namespace HamroSavings.Application.Savings.CreateDeposit;
 
 public sealed record CreateDepositCommand(
     Guid MemberId,
-    Guid GroupId,
+    Guid? GroupId,
     decimal Amount,
     int DepositMonth,
     int DepositYear,
