@@ -7,5 +7,6 @@ public enum LoanStatus
     Active = 2,
     PaidOff = 3,
     Overdue = 4,
-    Cancelled = 5
+    Cancelled = 5,
+    Declined = 6
 }

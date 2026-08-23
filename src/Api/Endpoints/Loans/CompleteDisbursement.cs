@@ -1,26 +1,26 @@
 using HamroSavings.Api.Extensions;
 using HamroSavings.Api.Infrastructure;
 using HamroSavings.Application.Abstractions.Messaging;
-using HamroSavings.Application.Loans.CastVote;
+using HamroSavings.Application.Loans.CompleteDisbursement;
 
 namespace HamroSavings.Api.Endpoints.Loans;
 
-public sealed class ApproveLoan : IEndpoint
+public sealed class CompleteDisbursement : IEndpoint
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapPost("loans/{id:guid}/approve", async (
+        app.MapPut("loans/{id:guid}/complete-disbursement", async (
             Guid id,
-            ICommandHandler<CastLoanVoteCommand> handler,
+            ICommandHandler<CompleteDisbursementCommand> handler,
             CancellationToken ct) =>
         {
-            var result = await handler.Handle(new CastLoanVoteCommand(id, IsApproved: true), ct);
+            var result = await handler.Handle(new CompleteDisbursementCommand(id), ct);
             return result.Match(
                 () => Results.NoContent(),
                 error => CustomResults.Problem(error));
         })
         .WithTags("Loans")
         .RequireAuthorization()
-        .WithSummary("Approve a loan (member vote or admin instant-approve)");
+        .WithSummary("Mark a loan's disbursement complete, activating it (Admin/SuperAdmin only)");
     }
 }

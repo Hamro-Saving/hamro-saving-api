@@ -3,6 +3,7 @@ using System;
 using HamroSavings.Infrastructure.Database;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace HamroSavings.Infrastructure.Database.Migrations
 {
     [DbContext(typeof(HamroSavingsDbContext))]
-    partial class HamroSavingsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260823062138_AddLoanVoteDecision")]
+    partial class AddLoanVoteDecision
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -214,6 +217,10 @@ namespace HamroSavings.Infrastructure.Database.Migrations
                         .HasColumnType("numeric(18,2)")
                         .HasColumnName("amount");
 
+                    b.Property<Guid?>("ApprovedById")
+                        .HasColumnType("uuid")
+                        .HasColumnName("approved_by_id");
+
                     b.Property<Guid>("BorrowerId")
                         .HasColumnType("uuid")
                         .HasColumnName("borrower_id");
@@ -227,10 +234,6 @@ namespace HamroSavings.Infrastructure.Database.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
-
-                    b.Property<Guid?>("DisbursedById")
-                        .HasColumnType("uuid")
-                        .HasColumnName("disbursed_by_id");
 
                     b.Property<DateTime?>("DueDate")
                         .HasColumnType("timestamp with time zone")

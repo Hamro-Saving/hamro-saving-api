@@ -16,7 +16,7 @@ public sealed class Loan : Entity
     public DateTime? DueDate { get; private set; }
     public LoanStatus Status { get; private set; }
     public string? Notes { get; private set; }
-    public Guid? ApprovedById { get; private set; }
+    public Guid? DisbursedById { get; private set; }
     public DateTime CreatedAt { get; private set; }
 
     private Loan() { }
@@ -43,7 +43,7 @@ public sealed class Loan : Entity
             DueDate = dueDate,
             Status = LoanStatus.Pending,
             Notes = notes,
-            ApprovedById = null,
+            DisbursedById = null,
             CreatedAt = DateTime.UtcNow
         };
         loan.Raise(new LoanCreatedDomainEvent(loan.Id, loan.BorrowerId, loan.GroupId));
@@ -52,7 +52,16 @@ public sealed class Loan : Entity
 
     public void MarkAsPaidOff() => Status = LoanStatus.PaidOff;
     public void MarkAsOverdue() => Status = LoanStatus.Overdue;
-    public void Cancel() => Status = LoanStatus.Cancelled;
+
+    /// <summary>Admins may pull a loan any time before the money leaves the group.</summary>
+    public Result Cancel()
+    {
+        if (Status is not (LoanStatus.Pending or LoanStatus.Approved))
+            return Result.Failure(LoanErrors.CannotCancelAfterDisbursement);
+
+        Status = LoanStatus.Cancelled;
+        return Result.Success();
+    }
 
     public Result ApproveLoan()
     {
@@ -61,11 +70,19 @@ public sealed class Loan : Entity
         return Result.Success();
     }
 
-    public Result Verify(Guid verifiedById)
+    public Result Decline()
+    {
+        if (Status != LoanStatus.Pending) return Result.Failure(LoanErrors.NotPending);
+        Status = LoanStatus.Declined;
+        return Result.Success();
+    }
+
+    /// <summary>Money is with the borrower — the loan starts running.</summary>
+    public Result CompleteDisbursement(Guid disbursedById)
     {
         if (Status != LoanStatus.Approved) return Result.Failure(LoanErrors.NotApproved);
         Status = LoanStatus.Active;
-        ApprovedById = verifiedById;
+        DisbursedById = disbursedById;
         Raise(new LoanCreatedDomainEvent(Id, BorrowerId, GroupId));
         return Result.Success();
     }

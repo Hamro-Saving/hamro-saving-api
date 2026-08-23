@@ -6,14 +6,14 @@ using HamroSavings.Domain.Users;
 using HamroSavings.SharedKernel;
 using Microsoft.EntityFrameworkCore;
 
-namespace HamroSavings.Application.Loans.VerifyLoan;
+namespace HamroSavings.Application.Loans.CompleteDisbursement;
 
-internal sealed class VerifyLoanCommandHandler(
+internal sealed class CompleteDisbursementCommandHandler(
     IApplicationDbContext dbContext,
     IUserContext userContext)
-    : ICommandHandler<VerifyLoanCommand>
+    : ICommandHandler<CompleteDisbursementCommand>
 {
-    public async Task<Result> Handle(VerifyLoanCommand command, CancellationToken cancellationToken = default)
+    public async Task<Result> Handle(CompleteDisbursementCommand command, CancellationToken cancellationToken = default)
     {
         if (!userContext.IsAdmin && !userContext.IsSuperAdmin)
             return Result.Failure(UserErrors.Unauthorized);
@@ -27,7 +27,7 @@ internal sealed class VerifyLoanCommandHandler(
         if (!userContext.IsSuperAdmin && loan.GroupId != userContext.GroupId)
             return Result.Failure(LoanErrors.NotInGroup);
 
-        var result = loan.Verify(userContext.UserId);
+        var result = loan.CompleteDisbursement(userContext.UserId);
         if (result.IsFailure) return result;
 
         await dbContext.SaveChangesAsync(cancellationToken);

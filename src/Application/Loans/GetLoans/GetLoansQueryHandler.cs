@@ -49,20 +49,14 @@ internal sealed class GetLoansQueryHandler(
             .Select(m => new { m.Id, Name = m.LastName == null ? m.FirstName : m.FirstName + " " + m.LastName })
             .ToListAsync(cancellationToken);
 
-        var approvalCounts = await dbContext.LoanApprovals
+        var allVotes = await dbContext.LoanApprovals
             .Where(a => loanIds.Contains(a.LoanId))
-            .GroupBy(a => a.LoanId)
-            .Select(g => new { LoanId = g.Key, Count = g.Count() })
+            .Select(a => new { a.LoanId, a.ApproverId, a.IsApproved, a.ApprovedAt })
             .ToListAsync(cancellationToken);
 
-        var allApprovals = await dbContext.LoanApprovals
-            .Where(a => loanIds.Contains(a.LoanId))
-            .Select(a => new { a.LoanId, a.ApproverId, a.ApprovedAt })
-            .ToListAsync(cancellationToken);
-
-        var approverIds = allApprovals.Select(a => a.ApproverId).Distinct().ToList();
-        var approverUsers = await dbContext.Users
-            .Where(u => approverIds.Contains(u.Id))
+        var voterIds = allVotes.Select(a => a.ApproverId).Distinct().ToList();
+        var voterUsers = await dbContext.Users
+            .Where(u => voterIds.Contains(u.Id))
             .Select(u => new
             {
                 u.Id,
@@ -72,32 +66,39 @@ internal sealed class GetLoansQueryHandler(
                     .FirstOrDefault() ?? "Unknown"
             })
             .ToListAsync(cancellationToken);
-        var approverDict = approverUsers.ToDictionary(u => u.Id, u => u.Name);
+        var voterDict = voterUsers.ToDictionary(u => u.Id, u => u.Name);
 
-        var approvalsByLoan = allApprovals
+        var votesByLoan = allVotes
             .GroupBy(a => a.LoanId)
-            .ToDictionary(
-                g => g.Key,
-                g => g.Select(a => new ApproverInfo(a.ApproverId, approverDict.GetValueOrDefault(a.ApproverId, "Unknown"), a.ApprovedAt)).ToList());
+            .ToDictionary(g => g.Key, g => g.ToList());
 
-        var currentUserApprovals = allApprovals
-            .Where(a => a.ApproverId == userContext.UserId)
-            .Select(a => a.LoanId)
-            .ToHashSet();
-
-        var totalGroupMembers = await dbContext.Members
-            .CountAsync(m => m.GroupId == userContext.GroupId && m.MembershipType == Domain.Members.MembershipType.Member, cancellationToken);
+        // Every loan needs a majority of its own group's voters, so count per group.
+        var groupIds = loans.Select(l => l.GroupId).Distinct().ToList();
+        var voterCountByGroup = (await LoanVoting.EligibleVoters(dbContext)
+            .Where(m => groupIds.Contains(m.GroupId))
+            .GroupBy(m => m.GroupId)
+            .Select(g => new { GroupId = g.Key, Count = g.Count() })
+            .ToListAsync(cancellationToken))
+            .ToDictionary(x => x.GroupId, x => x.Count);
 
         var borrowerDict = allBorrowers.ToDictionary(m => m.Id, m => m.Name);
-        var approvalCountDict = approvalCounts.ToDictionary(a => a.LoanId, a => a.Count);
 
         var now = DateTime.UtcNow;
         var response = loans.Select(l =>
         {
             var borrowerName = borrowerDict.GetValueOrDefault(l.BorrowerId, "Unknown");
 
-            var approvalCount = approvalCountDict.GetValueOrDefault(l.Id, 0);
-            var requiredApprovals = (int)Math.Ceiling(totalGroupMembers / 2.0);
+            var votes = votesByLoan.GetValueOrDefault(l.Id, []);
+            var approvers = votes
+                .Where(v => v.IsApproved)
+                .Select(v => new ApproverInfo(v.ApproverId, voterDict.GetValueOrDefault(v.ApproverId, "Unknown"), v.ApprovedAt))
+                .ToList();
+            var decliners = votes
+                .Where(v => !v.IsApproved)
+                .Select(v => new ApproverInfo(v.ApproverId, voterDict.GetValueOrDefault(v.ApproverId, "Unknown"), v.ApprovedAt))
+                .ToList();
+
+            var requiredApprovals = LoanVoting.VotesNeeded(voterCountByGroup.GetValueOrDefault(l.GroupId, 0));
             var elapsedDays = l.Status == LoanStatus.Active ? (now - l.StartDate).Days : 0;
             var accruedInterest = l.Amount * (l.InterestRate / 100m) * elapsedDays / 365m;
 
@@ -116,11 +117,14 @@ internal sealed class GetLoansQueryHandler(
                 l.DueDate,
                 l.Status,
                 l.Notes,
-                l.ApprovedById,
-                approvalCount,
+                l.DisbursedById,
+                approvers.Count,
+                decliners.Count,
                 requiredApprovals,
-                currentUserApprovals.Contains(l.Id),
-                approvalsByLoan.GetValueOrDefault(l.Id, []),
+                approvers.Any(a => a.ApproverId == userContext.UserId),
+                decliners.Any(a => a.ApproverId == userContext.UserId),
+                approvers,
+                decliners,
                 l.CreatedAt);
         }).ToList();
 

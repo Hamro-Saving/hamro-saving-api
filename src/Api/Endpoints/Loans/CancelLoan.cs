@@ -1,26 +1,26 @@
 using HamroSavings.Api.Extensions;
 using HamroSavings.Api.Infrastructure;
 using HamroSavings.Application.Abstractions.Messaging;
-using HamroSavings.Application.Loans.CastVote;
+using HamroSavings.Application.Loans.CancelLoan;
 
 namespace HamroSavings.Api.Endpoints.Loans;
 
-public sealed class ApproveLoan : IEndpoint
+public sealed class CancelLoan : IEndpoint
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapPost("loans/{id:guid}/approve", async (
+        app.MapPost("loans/{id:guid}/cancel", async (
             Guid id,
-            ICommandHandler<CastLoanVoteCommand> handler,
+            ICommandHandler<CancelLoanCommand> handler,
             CancellationToken ct) =>
         {
-            var result = await handler.Handle(new CastLoanVoteCommand(id, IsApproved: true), ct);
+            var result = await handler.Handle(new CancelLoanCommand(id), ct);
             return result.Match(
                 () => Results.NoContent(),
                 error => CustomResults.Problem(error));
         })
         .WithTags("Loans")
         .RequireAuthorization()
-        .WithSummary("Approve a loan (member vote or admin instant-approve)");
+        .WithSummary("Cancel a loan before its disbursement starts (Admin/SuperAdmin only)");
     }
 }

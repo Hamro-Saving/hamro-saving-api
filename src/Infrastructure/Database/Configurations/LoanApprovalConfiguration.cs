@@ -12,6 +12,7 @@ internal sealed class LoanApprovalConfiguration : IEntityTypeConfiguration<LoanA
 
         builder.Property(a => a.LoanId).IsRequired();
         builder.Property(a => a.ApproverId).IsRequired();
+        builder.Property(a => a.IsApproved).IsRequired().HasDefaultValue(true);
         builder.Property(a => a.ApprovedAt).IsRequired();
 
         builder.HasIndex(a => new { a.LoanId, a.ApproverId }).IsUnique();
