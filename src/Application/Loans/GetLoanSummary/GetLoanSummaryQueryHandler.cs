@@ -28,24 +28,20 @@ internal sealed class GetLoanSummaryQueryHandler(
 
         var loans = await loansQuery.ToListAsync(cancellationToken);
 
-        var loanIds = loans.Select(l => l.Id).ToList();
-        var totalPaid = await dbContext.LoanPayments
-            .Where(p => loanIds.Contains(p.LoanId))
-            .SumAsync(p => (decimal?)p.Amount, cancellationToken) ?? 0;
-
-        var totalPrincipal = loans.Sum(l => l.Amount);
-        var totalInterest = loans.Sum(l => l.TotalInterest);
-        var totalDue = loans.Sum(l => l.TotalDue);
+        var now = DateTime.UtcNow;
+        var totalOutstandingPrincipal = loans.Sum(l => l.OutstandingPrincipal);
+        var totalAccruedInterest = loans.Sum(l => l.InterestAccruedAsOf(now));
 
         return Result.Success(new LoanSummaryResponse(
             loans.Count,
             loans.Count(l => l.Status == LoanStatus.Active),
             loans.Count(l => l.Status == LoanStatus.PaidOff),
             loans.Count(l => l.Status == LoanStatus.Overdue),
-            totalPrincipal,
-            totalInterest,
-            totalDue,
-            totalPaid,
-            totalDue - totalPaid));
+            loans.Sum(l => l.Amount),
+            totalOutstandingPrincipal,
+            totalAccruedInterest,
+            loans.Sum(l => l.TotalPrincipalPaid),
+            loans.Sum(l => l.TotalInterestPaid),
+            totalOutstandingPrincipal + totalAccruedInterest));
     }
 }

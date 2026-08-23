@@ -40,7 +40,8 @@ internal sealed class GetFinancialSummaryQueryHandler(
             .Where(l => l.Status == LoanStatus.Active || l.Status == LoanStatus.Overdue)
             .ToListAsync(cancellationToken);
 
-        var totalOnLoan = activeLoans.Sum(l => l.Amount);
+        // Money actually still out with borrowers, not what was originally lent
+        var totalOnLoan = activeLoans.Sum(l => l.OutstandingPrincipal);
 
         if (groupId.HasValue)
         {
