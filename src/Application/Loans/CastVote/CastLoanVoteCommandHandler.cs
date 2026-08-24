@@ -21,16 +21,12 @@ internal sealed class CastLoanVoteCommandHandler(
         if (loan is null)
             return Result.Failure(LoanErrors.NotFound(command.LoanId));
 
-        if (loan.GroupId != userContext.GroupId)
+        if (!userContext.CanWrite(loan.GroupId))
             return Result.Failure(LoanErrors.NotInGroup);
 
-        // Approval is the members' decision alone — admins disburse or cancel instead.
-        if (userContext.IsAdmin || userContext.IsSuperAdmin)
-            return Result.Failure(LoanErrors.AdminCannotVote);
-
-        // Non-members can hold accounts and borrow, but they never vote.
+        // Admins vote like any other member; only non-members are excluded.
         var isEligibleVoter = await LoanVoting.EligibleVoters(dbContext)
-            .AnyAsync(m => m.Id == userContext.MemberId && m.GroupId == loan.GroupId, cancellationToken);
+            .AnyAsync(m => m.Id == userContext.ActiveMemberId && m.GroupId == loan.GroupId, cancellationToken);
 
         if (!isEligibleVoter)
             return Result.Failure(LoanErrors.NotEligibleToVote);
@@ -40,7 +36,7 @@ internal sealed class CastLoanVoteCommandHandler(
 
         // Members vote on every loan the group makes, whether the borrower is a
         // member or a non-member an admin added on their behalf.
-        if (loan.BorrowerId == userContext.MemberId)
+        if (loan.BorrowerId == userContext.ActiveMemberId)
             return Result.Failure(LoanErrors.CannotSelfVote);
 
         var alreadyVoted = await dbContext.LoanApprovals

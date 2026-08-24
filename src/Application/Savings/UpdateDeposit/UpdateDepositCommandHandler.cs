@@ -21,11 +21,11 @@ internal sealed class UpdateDepositCommandHandler(
         if (deposit is null)
             return Result.Failure(DepositErrors.NotFound(command.DepositId));
 
-        if (!userContext.IsSuperAdmin && deposit.GroupId != userContext.GroupId)
+        if (!userContext.CanWrite(deposit.GroupId))
             return Result.Failure(DepositErrors.NotInGroup);
 
         // Members can only edit their own deposits; admins can edit any in their group
-        if (!userContext.IsSuperAdmin && !userContext.IsAdmin && deposit.MemberId != userContext.MemberId)
+        if (!userContext.IsGroupAdmin && deposit.MemberId != userContext.ActiveMemberId)
             return Result.Failure(UserErrors.Unauthorized);
 
         var result = deposit.Update(command.Amount, command.Notes);

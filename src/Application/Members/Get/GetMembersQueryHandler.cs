@@ -2,7 +2,6 @@ using HamroSavings.Application.Abstractions.Authentication;
 using HamroSavings.Application.Abstractions.Data;
 using HamroSavings.Application.Abstractions.Messaging;
 using HamroSavings.Domain.Members;
-using HamroSavings.Domain.Users;
 using HamroSavings.SharedKernel;
 using Microsoft.EntityFrameworkCore;
 
@@ -15,28 +14,22 @@ internal sealed class GetMembersQueryHandler(
 {
     public async Task<Result<List<MemberResponse>>> Handle(GetMembersQuery query, CancellationToken cancellationToken = default)
     {
-        IQueryable<Member> membersQuery;
+        IQueryable<Member> membersQuery = dbContext.Members;
 
-        if (query.MembershipType == MembershipType.NonMember)
+        if (query.Roles is { Count: > 0 })
         {
-            membersQuery = dbContext.Members.Where(m => m.MembershipType == MembershipType.NonMember);
-        }
-        else
-        {
-            membersQuery = query.IncludeAdmins
-                ? dbContext.Members.Where(m => m.MembershipType == MembershipType.Member)
-                : dbContext.Members.Where(m => m.MembershipType == MembershipType.Member &&
-                      !dbContext.Users.Any(u => u.MemberId == m.Id && u.Role == UserRole.Admin));
+            var roles = query.Roles;
+            membersQuery = membersQuery.Where(m => roles.Contains(m.GroupRole));
         }
 
-        if (!userContext.IsSuperAdmin)
+        // A SuperAdmin may read across groups; everyone else is pinned to theirs.
+        var groupResult = userContext.ResolveReadGroupId(query.GroupId);
+        if (groupResult.IsFailure) return Result.Failure<List<MemberResponse>>(groupResult.Error);
+        var groupId = groupResult.Value;
+
+        if (groupId.HasValue)
         {
-            var groupId = userContext.GroupId;
-            membersQuery = membersQuery.Where(m => m.GroupId == groupId);
-        }
-        else if (query.GroupId.HasValue)
-        {
-            membersQuery = membersQuery.Where(m => m.GroupId == query.GroupId.Value);
+            membersQuery = membersQuery.Where(m => m.GroupId == groupId.Value);
         }
 
         var members = await membersQuery
@@ -48,11 +41,10 @@ internal sealed class GetMembersQueryHandler(
                 m.FirstName,
                 m.LastName,
                 m.LastName == null ? m.FirstName : m.FirstName + " " + m.LastName,
-                dbContext.Users.Where(u => u.MemberId == m.Id).Select(u => (UserRole?)u.Role).FirstOrDefault(),
-                m.MembershipType,
+                m.GroupRole,
                 m.GroupId,
                 m.IsActive,
-                dbContext.Users.Any(u => u.MemberId == m.Id && u.IsActive),
+                dbContext.Users.Any(u => u.Id == m.UserId && u.IsActive),
                 m.PhoneNumber,
                 m.Address,
                 m.CreatedAt))

@@ -3,7 +3,6 @@ using HamroSavings.Application.Abstractions.Data;
 using HamroSavings.Application.Abstractions.Messaging;
 using HamroSavings.Application.Members.Get;
 using HamroSavings.Domain.Members;
-using HamroSavings.Domain.Users;
 using HamroSavings.SharedKernel;
 using Microsoft.EntityFrameworkCore;
 
@@ -18,9 +17,9 @@ internal sealed class GetMemberByIdQueryHandler(
     {
         var membersQuery = dbContext.Members.Where(m => m.Id == query.MemberId);
 
-        if (!userContext.IsSuperAdmin && userContext.GroupId.HasValue)
+        if (!userContext.IsSuperAdmin)
         {
-            var groupId = userContext.GroupId;
+            var groupId = userContext.ActiveGroupId;
             membersQuery = membersQuery.Where(m => m.GroupId == groupId);
         }
 
@@ -31,11 +30,10 @@ internal sealed class GetMemberByIdQueryHandler(
                 m.FirstName,
                 m.LastName,
                 m.LastName == null ? m.FirstName : m.FirstName + " " + m.LastName,
-                dbContext.Users.Where(u => u.MemberId == m.Id).Select(u => (UserRole?)u.Role).FirstOrDefault(),
-                m.MembershipType,
+                m.GroupRole,
                 m.GroupId,
                 m.IsActive,
-                dbContext.Users.Any(u => u.MemberId == m.Id && u.IsActive),
+                dbContext.Users.Any(u => u.Id == m.UserId && u.IsActive),
                 m.PhoneNumber,
                 m.Address,
                 m.CreatedAt))

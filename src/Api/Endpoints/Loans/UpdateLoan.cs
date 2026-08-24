@@ -1,5 +1,6 @@
 using HamroSavings.Api.Extensions;
 using HamroSavings.Api.Infrastructure;
+using HamroSavings.Application.Abstractions.Authentication;
 using HamroSavings.Application.Abstractions.Messaging;
 using HamroSavings.Application.Loans.UpdateLoan;
 
@@ -22,7 +23,7 @@ public sealed class UpdateLoan : IEndpoint
                 error => CustomResults.Problem(error));
         })
         .WithTags("Loans")
-        .RequireAuthorization()
+        .RequireAuthorization(Policies.GroupMember)
         .WithSummary("Update an unapproved loan (borrower or Admin/SuperAdmin)");
     }
 }

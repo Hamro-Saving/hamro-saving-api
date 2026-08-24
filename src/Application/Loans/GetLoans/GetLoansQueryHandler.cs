@@ -16,14 +16,20 @@ internal sealed class GetLoansQueryHandler(
     {
         var loansQuery = dbContext.Loans.AsQueryable();
 
-        if (!userContext.IsSuperAdmin)
+        // A SuperAdmin may read across groups; everyone else is pinned to theirs.
+        var groupResult = userContext.ResolveReadGroupId(query.GroupId);
+        if (groupResult.IsFailure) return Result.Failure<List<LoanResponse>>(groupResult.Error);
+        var groupId = groupResult.Value;
+
+        if (groupId.HasValue)
         {
-            var groupId = userContext.GroupId;
-            loansQuery = loansQuery.Where(l => l.GroupId == groupId);
+            loansQuery = loansQuery.Where(l => l.GroupId == groupId.Value);
         }
-        else if (query.GroupId.HasValue)
+
+        if (userContext.SeesOnlyOwnRecords())
         {
-            loansQuery = loansQuery.Where(l => l.GroupId == query.GroupId.Value);
+            var ownMemberId = userContext.ActiveMemberId;
+            loansQuery = loansQuery.Where(l => l.BorrowerId == ownMemberId);
         }
 
         if (query.BorrowerId.HasValue)
@@ -61,7 +67,7 @@ internal sealed class GetLoansQueryHandler(
             {
                 u.Id,
                 Name = dbContext.Members
-                    .Where(m => m.Id == u.MemberId)
+                    .Where(m => m.UserId == u.Id)
                     .Select(m => m.LastName == null ? m.FirstName : m.FirstName + " " + m.LastName)
                     .FirstOrDefault() ?? "Unknown"
             })
@@ -131,6 +137,11 @@ internal sealed class GetLoansQueryHandler(
                 decliners,
                 l.CreatedAt);
         }).ToList();
+
+        if (userContext.SeesOnlyOwnRecords())
+        {
+            response = response.Select(r => r.WithoutGroupInternals()).ToList();
+        }
 
         return Result.Success(response);
     }

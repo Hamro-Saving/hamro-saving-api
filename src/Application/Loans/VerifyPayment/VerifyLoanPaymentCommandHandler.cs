@@ -15,7 +15,7 @@ internal sealed class VerifyLoanPaymentCommandHandler(
 {
     public async Task<Result> Handle(VerifyLoanPaymentCommand command, CancellationToken cancellationToken = default)
     {
-        if (!userContext.IsSuperAdmin && !userContext.IsAdmin)
+        if (!userContext.IsGroupAdmin)
         {
             return Result.Failure(UserErrors.Unauthorized);
         }
@@ -31,7 +31,7 @@ internal sealed class VerifyLoanPaymentCommandHandler(
         var loan = await dbContext.Loans
             .FirstOrDefaultAsync(l => l.Id == payment.LoanId, cancellationToken);
 
-        if (loan is not null && !userContext.IsSuperAdmin && loan.GroupId != userContext.GroupId)
+        if (loan is not null && !userContext.CanWrite(loan.GroupId))
         {
             return Result.Failure(LoanErrors.NotInGroup);
         }

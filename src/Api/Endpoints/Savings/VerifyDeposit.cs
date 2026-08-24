@@ -1,5 +1,6 @@
 using HamroSavings.Api.Extensions;
 using HamroSavings.Api.Infrastructure;
+using HamroSavings.Application.Abstractions.Authentication;
 using HamroSavings.Application.Abstractions.Messaging;
 using HamroSavings.Application.Savings.VerifyDeposit;
 
@@ -20,7 +21,7 @@ public sealed class VerifyDeposit : IEndpoint
                 error => CustomResults.Problem(error));
         })
         .WithTags("Savings")
-        .RequireAuthorization()
-        .WithSummary("Verify a deposit (Admin/SuperAdmin only)");
+        .RequireAuthorization(Policies.GroupAdmin)
+        .WithSummary("Verify a deposit (group admin only)");
     }
 }

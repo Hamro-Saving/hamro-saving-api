@@ -1,5 +1,7 @@
 using HamroSavings.Api.Extensions;
 using HamroSavings.Application;
+using HamroSavings.Application.Abstractions.Authentication;
+using HamroSavings.Domain.Members;
 using HamroSavings.Infrastructure;
 using Scalar.AspNetCore;
 using Serilog;
@@ -17,9 +19,23 @@ builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddPresentation();
 builder.Services.AddEndpoints(Assembly.GetExecutingAssembly());
 
+// Two independent axes. SuperAdmin is about the platform and implies nothing about any group,
+// so it deliberately does NOT satisfy GroupAdmin — administering a group's money requires a
+// membership in it. A person who is both simply carries both claims.
 builder.Services.AddAuthorizationBuilder()
-    .AddPolicy("SuperAdmin", policy => policy.RequireRole("SuperAdmin"))
-    .AddPolicy("Admin", policy => policy.RequireRole("Admin", "SuperAdmin"));
+    .AddPolicy(Policies.SuperAdmin, policy =>
+        policy.RequireClaim(AppClaims.IsSuperAdmin, "true"))
+    .AddPolicy(Policies.GroupAdmin, policy =>
+        policy.RequireClaim(AppClaims.GroupRole, nameof(GroupRole.Admin)))
+    .AddPolicy(Policies.GroupMember, policy =>
+        policy.RequireClaim(AppClaims.GroupRole, nameof(GroupRole.Member), nameof(GroupRole.Admin)))
+    // The group's books. A non-member may log in to follow their own loan, but the group's
+    // deposits, expenses and roster are not theirs to read.
+    .AddPolicy(Policies.GroupRead, policy =>
+        policy.RequireAssertion(ctx =>
+            ctx.User.HasClaim(AppClaims.IsSuperAdmin, "true")
+            || ctx.User.HasClaim(AppClaims.GroupRole, nameof(GroupRole.Member))
+            || ctx.User.HasClaim(AppClaims.GroupRole, nameof(GroupRole.Admin))));
 
 builder.Services.AddCors(options =>
     options.AddDefaultPolicy(policy =>

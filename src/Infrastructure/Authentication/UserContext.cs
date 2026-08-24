@@ -1,58 +1,76 @@
 using HamroSavings.Application.Abstractions.Authentication;
 using HamroSavings.Domain.Members;
-using HamroSavings.Domain.Users;
 using Microsoft.AspNetCore.Http;
 using System.Security.Claims;
+using System.Text.Json;
 
 namespace HamroSavings.Infrastructure.Authentication;
 
 internal sealed class UserContext(IHttpContextAccessor httpContextAccessor) : IUserContext
 {
+    private ClaimsPrincipal? Principal => httpContextAccessor.HttpContext?.User;
+
     public Guid UserId =>
-        Guid.Parse(httpContextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier)
+        Guid.Parse(Principal?.FindFirstValue(ClaimTypes.NameIdentifier)
             ?? throw new InvalidOperationException("User ID claim not found."));
 
-    public Guid? MemberId
+    public bool IsSuperAdmin =>
+        string.Equals(Principal?.FindFirstValue(AppClaims.IsSuperAdmin), "true", StringComparison.OrdinalIgnoreCase);
+
+    public Guid? ActiveGroupId => ParseGuid(AppClaims.GroupId);
+
+    public Guid? ActiveMemberId => ParseGuid(AppClaims.MemberId);
+
+    public GroupRole? ActiveGroupRole => ParseEnum<GroupRole>(AppClaims.GroupRole);
+
+    public bool IsGroupAdmin => ActiveGroupRole == GroupRole.Admin;
+
+    public bool IsGroupMember => ActiveGroupId is not null;
+
+    public bool ParticipatesInGroup => ActiveGroupRole?.Participates() == true;
+
+    public IReadOnlyList<MembershipClaim> Memberships
     {
         get
         {
-            var memberIdStr = httpContextAccessor.HttpContext?.User.FindFirstValue("MemberId");
-            if (string.IsNullOrEmpty(memberIdStr)) return null;
-            return Guid.TryParse(memberIdStr, out var id) ? id : null;
+            var raw = Principal?.FindFirstValue(AppClaims.Memberships);
+            if (string.IsNullOrEmpty(raw)) return [];
+
+            try
+            {
+                var parsed = JsonSerializer.Deserialize<List<MembershipJson>>(raw);
+                return parsed?
+                    .Select(m => new MembershipClaim(
+                        m.GroupId,
+                        m.GroupName ?? string.Empty,
+                        m.MemberId,
+                        Enum.TryParse<GroupRole>(m.GroupRole, out var gr) ? gr : GroupRole.Member))
+                    .ToList() ?? [];
+            }
+            catch (JsonException)
+            {
+                return [];
+            }
         }
     }
 
-    public UserRole Role
+    private Guid? ParseGuid(string claim)
     {
-        get
-        {
-            var roleStr = httpContextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.Role)
-                ?? throw new InvalidOperationException("Role claim not found.");
-            return Enum.Parse<UserRole>(roleStr);
-        }
+        var value = Principal?.FindFirstValue(claim);
+        if (string.IsNullOrEmpty(value)) return null;
+        return Guid.TryParse(value, out var id) ? id : null;
     }
 
-    public Guid? GroupId
+    private T? ParseEnum<T>(string claim) where T : struct, Enum
     {
-        get
-        {
-            var groupIdStr = httpContextAccessor.HttpContext?.User.FindFirstValue("GroupId");
-            if (string.IsNullOrEmpty(groupIdStr)) return null;
-            return Guid.TryParse(groupIdStr, out var id) ? id : null;
-        }
+        var value = Principal?.FindFirstValue(claim);
+        if (string.IsNullOrEmpty(value)) return null;
+        return Enum.TryParse<T>(value, out var parsed) ? parsed : null;
     }
 
-    public MembershipType? MembershipType
-    {
-        get
-        {
-            var val = httpContextAccessor.HttpContext?.User.FindFirstValue("MembershipType");
-            if (string.IsNullOrEmpty(val)) return null;
-            return Enum.TryParse<MembershipType>(val, out var mt) ? mt : null;
-        }
-    }
-
-    public bool IsSuperAdmin => Role == UserRole.SuperAdmin;
-    public bool IsAdmin => Role == UserRole.Admin;
-    public bool IsMember => Role == UserRole.Member;
+    private sealed record MembershipJson(
+        Guid GroupId,
+        string? GroupName,
+        Guid MemberId,
+        string? GroupRole);
 }

@@ -4,7 +4,7 @@ using HamroSavings.Domain.Members;
 namespace HamroSavings.Application.Members.Create;
 
 public sealed record CreateMemberCommand(
-    MembershipType MembershipType,
+    GroupRole GroupRole,
     string FirstName,
     string? LastName,
     string? Email,

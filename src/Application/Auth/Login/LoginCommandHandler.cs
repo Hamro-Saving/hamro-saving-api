@@ -1,7 +1,6 @@
 using HamroSavings.Application.Abstractions.Authentication;
 using HamroSavings.Application.Abstractions.Data;
 using HamroSavings.Application.Abstractions.Messaging;
-using HamroSavings.Domain.Groups;
 using HamroSavings.Domain.Users;
 using HamroSavings.SharedKernel;
 using Microsoft.EntityFrameworkCore;
@@ -28,32 +27,22 @@ internal sealed class LoginCommandHandler(
         if (!passwordHasher.Verify(command.Password, user.PasswordHash))
             return Result.Failure<string>(UserErrors.InvalidCredentials);
 
-        // Look up linked Member to get group context (null for SuperAdmin)
-        var member = user.MemberId.HasValue
-            ? await dbContext.Members.FindAsync([user.MemberId.Value], cancellationToken)
-            : null;
+        var memberships = await dbContext.LoadMembershipsAsync(user.Id, cancellationToken);
 
-        // For non-SuperAdmin users, validate their group is active and within validity period
-        if (member is not null)
-        {
-            var group = await dbContext.Groups
-                .FirstOrDefaultAsync(g => g.Id == member.GroupId, cancellationToken);
+        // Only groups inside their validity window are offered; a person whose one group has
+        // expired cannot act, but a SuperAdmin still gets in on their platform role alone.
+        var usable = memberships.Where(m => MembershipLoader.CheckUsable(m.Group).IsSuccess).ToList();
 
-            if (group is not null)
-            {
-                if (!group.IsActive)
-                    return Result.Failure<string>(GroupErrors.NotActive);
+        if (usable.Count == 0 && memberships.Count > 0 && !user.IsSuperAdmin)
+            return Result.Failure<string>(MembershipLoader.CheckUsable(memberships[0].Group).Error);
 
-                var now = DateTime.UtcNow;
-                if (group.ValidFrom.HasValue && now < group.ValidFrom.Value)
-                    return Result.Failure<string>(GroupErrors.ValidityNotStarted);
+        var active = usable.FirstOrDefault();
 
-                if (group.ValidTo.HasValue && now > group.ValidTo.Value)
-                    return Result.Failure<string>(GroupErrors.ValidityExpired);
-            }
-        }
+        var token = tokenProvider.Create(
+            user,
+            active?.Member,
+            usable.Select(m => m.ToClaim()).ToList());
 
-        var token = tokenProvider.Create(user, member);
         return Result.Success(token);
     }
 }

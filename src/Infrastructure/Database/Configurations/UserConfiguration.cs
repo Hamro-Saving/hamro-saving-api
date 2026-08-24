@@ -20,18 +20,12 @@ internal sealed class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(u => u.PasswordHash)
             .IsRequired();
 
-        builder.Property(u => u.Role)
+        builder.Property(u => u.IsSuperAdmin)
             .IsRequired()
-            .HasConversion<string>();
+            .HasDefaultValue(false);
 
         builder.Property(u => u.IsActive)
             .HasDefaultValue(false);
-
-        builder.Property(u => u.MemberId);
-
-        builder.HasIndex(u => u.MemberId)
-            .IsUnique()
-            .HasFilter("member_id IS NOT NULL");
 
         builder.HasIndex(u => u.InviteToken)
             .IsUnique()

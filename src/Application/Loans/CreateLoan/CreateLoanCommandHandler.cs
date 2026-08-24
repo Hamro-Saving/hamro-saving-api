@@ -18,14 +18,14 @@ internal sealed class CreateLoanCommandHandler(
     public async Task<Result<Guid>> Handle(CreateLoanCommand command, CancellationToken cancellationToken = default)
     {
         // Admins and members act in the group on their token; only a SuperAdmin names one
-        var groupResult = userContext.ResolveGroupId(command.GroupId);
+        var groupResult = userContext.ResolveWriteGroupId();
         if (groupResult.IsFailure) return Result.Failure<Guid>(groupResult.Error);
         var groupId = groupResult.Value;
 
         // Members (non-admin) can only apply for themselves
-        if (!userContext.IsAdmin && !userContext.IsSuperAdmin)
+        if (!userContext.IsGroupAdmin)
         {
-            if (command.BorrowerType != "Member" || command.BorrowerId != userContext.MemberId)
+            if (command.BorrowerType != "Member" || command.BorrowerId != userContext.ActiveMemberId)
                 return Result.Failure<Guid>(UserErrors.Unauthorized);
         }
 
@@ -47,19 +47,19 @@ internal sealed class CreateLoanCommandHandler(
                 return Result.Failure<Guid>(MemberErrors.NotFound(command.BorrowerId));
             }
             // Only admins may override the group default rate
-            var effectiveRate = (userContext.IsAdmin || userContext.IsSuperAdmin) ? command.InterestRate : null;
+            var effectiveRate = (userContext.IsGroupAdmin) ? command.InterestRate : null;
             interestRate = effectiveRate ?? group.MemberInterestRate;
         }
         else if (command.BorrowerType == "NonMember")
         {
             var nonMemberExists = await dbContext.Members
-                .AnyAsync(nm => nm.Id == command.BorrowerId && nm.GroupId == groupId && nm.MembershipType == Domain.Members.MembershipType.NonMember, cancellationToken);
+                .AnyAsync(nm => nm.Id == command.BorrowerId && nm.GroupId == groupId && nm.GroupRole == Domain.Members.GroupRole.NonMember, cancellationToken);
             if (!nonMemberExists)
             {
                 return Result.Failure<Guid>(MemberErrors.NotFound(command.BorrowerId));
             }
             // Only admins may override the group default rate
-            var effectiveRate = (userContext.IsAdmin || userContext.IsSuperAdmin) ? command.InterestRate : null;
+            var effectiveRate = (userContext.IsGroupAdmin) ? command.InterestRate : null;
             interestRate = effectiveRate ?? group.NonMemberInterestRate;
         }
         else

@@ -34,4 +34,23 @@ public sealed record LoanResponse(
     bool HasCurrentUserDeclined,
     List<ApproverInfo> Approvers,
     List<ApproverInfo> Decliners,
-    DateTime CreatedAt);
+    DateTime CreatedAt)
+{
+    /// <summary>
+    /// The same loan with the group's governance stripped out: who voted, how many votes it
+    /// takes, and which admin disbursed it. A non-member borrows from the group without
+    /// joining it, so they see the terms of their own loan and nothing about the group
+    /// deciding it — the approver names alone would undo the roster being private to them.
+    /// </summary>
+    public LoanResponse WithoutGroupInternals() => this with
+    {
+        DisbursedById = null,
+        ApprovalCount = 0,
+        DeclineCount = 0,
+        RequiredApprovals = 0,
+        HasCurrentUserApproved = false,
+        HasCurrentUserDeclined = false,
+        Approvers = [],
+        Decliners = []
+    };
+}

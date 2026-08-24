@@ -1,5 +1,6 @@
 using HamroSavings.Api.Extensions;
 using HamroSavings.Api.Infrastructure;
+using HamroSavings.Application.Abstractions.Authentication;
 using HamroSavings.Application.Abstractions.Messaging;
 using HamroSavings.Application.Savings.GetDeposits;
 
@@ -24,7 +25,7 @@ public sealed class GetDeposits : IEndpoint
                 error => CustomResults.Problem(error));
         })
         .WithTags("Savings")
-        .RequireAuthorization()
+        .RequireAuthorization(Policies.GroupRead)
         .WithSummary("Get deposits with optional filters");
     }
 }

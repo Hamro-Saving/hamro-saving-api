@@ -18,11 +18,10 @@ internal sealed class GetSignupInfoQueryHandler(IApplicationDbContext dbContext)
         if (user is null)
             return Result.Failure<SignupInfoResponse>(UserErrors.InviteTokenInvalid);
 
-        if (user.MemberId is null)
-            return Result.Failure<SignupInfoResponse>(UserErrors.InviteTokenInvalid);
-
         var member = await dbContext.Members
-            .FindAsync([user.MemberId.Value], cancellationToken);
+            .Where(m => m.UserId == user.Id && m.IsActive)
+            .OrderBy(m => m.CreatedAt)
+            .FirstOrDefaultAsync(cancellationToken);
 
         if (member is null)
             return Result.Failure<SignupInfoResponse>(UserErrors.InviteTokenInvalid);

@@ -1,5 +1,6 @@
 using HamroSavings.Api.Extensions;
 using HamroSavings.Api.Infrastructure;
+using HamroSavings.Application.Abstractions.Authentication;
 using HamroSavings.Application.Abstractions.Messaging;
 using HamroSavings.Application.Loans.RecordPayment;
 
@@ -29,7 +30,7 @@ public sealed class RecordLoanPayment : IEndpoint
                 error => CustomResults.Problem(error));
         })
         .WithTags("Loans")
-        .RequireAuthorization()
+        .RequireAuthorization(Policies.GroupAdmin)
         .WithSummary("Record a loan payment, settling interest up to its date");
     }
 }

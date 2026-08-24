@@ -15,14 +15,14 @@ internal sealed class GetExpensesQueryHandler(
     {
         var expensesQuery = dbContext.Expenses.AsQueryable();
 
-        if (!userContext.IsSuperAdmin)
+        // A SuperAdmin may read across groups; everyone else is pinned to theirs.
+        var groupResult = userContext.ResolveReadGroupId(query.GroupId);
+        if (groupResult.IsFailure) return Result.Failure<List<ExpenseResponse>>(groupResult.Error);
+        var groupId = groupResult.Value;
+
+        if (groupId.HasValue)
         {
-            var groupId = userContext.GroupId;
-            expensesQuery = expensesQuery.Where(e => e.GroupId == groupId);
-        }
-        else if (query.GroupId.HasValue)
-        {
-            expensesQuery = expensesQuery.Where(e => e.GroupId == query.GroupId.Value);
+            expensesQuery = expensesQuery.Where(e => e.GroupId == groupId.Value);
         }
 
         if (!string.IsNullOrWhiteSpace(query.Category))

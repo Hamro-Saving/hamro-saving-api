@@ -9,9 +9,6 @@ public sealed class CreateDepositCommandValidator : AbstractValidator<CreateDepo
         RuleFor(x => x.MemberId)
             .NotEmpty().WithMessage("Member ID is required.");
 
-        RuleFor(x => x.GroupId)
-            .NotEmpty().WithMessage("Group ID is required.");
-
         RuleFor(x => x.Amount)
             .GreaterThan(0).WithMessage("Amount must be greater than zero.");
 

@@ -1,5 +1,6 @@
 using HamroSavings.Api.Extensions;
 using HamroSavings.Api.Infrastructure;
+using HamroSavings.Application.Abstractions.Authentication;
 using HamroSavings.Application.Abstractions.Messaging;
 using HamroSavings.Application.Loans.CompleteDisbursement;
 
@@ -20,7 +21,7 @@ public sealed class CompleteDisbursement : IEndpoint
                 error => CustomResults.Problem(error));
         })
         .WithTags("Loans")
-        .RequireAuthorization()
-        .WithSummary("Mark a loan's disbursement complete, activating it (Admin/SuperAdmin only)");
+        .RequireAuthorization(Policies.GroupAdmin)
+        .WithSummary("Mark a loan's disbursement complete, activating it (group admin only)");
     }
 }

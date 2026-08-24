@@ -17,9 +17,9 @@ internal sealed class GetGroupsQueryHandler(
     {
         var groupsQuery = dbContext.Groups.AsQueryable();
 
-        if (!userContext.IsSuperAdmin && userContext.GroupId.HasValue)
+        if (!userContext.IsSuperAdmin)
         {
-            groupsQuery = groupsQuery.Where(g => g.Id == userContext.GroupId.Value);
+            groupsQuery = groupsQuery.Where(g => g.Id == userContext.ActiveGroupId);
         }
 
         var groups = await groupsQuery
@@ -37,7 +37,7 @@ internal sealed class GetGroupsQueryHandler(
                 g.CreatedAt,
                 g.UpdatedAt,
                 dbContext.Members.Count(m => m.GroupId == g.Id && m.IsActive &&
-                    m.MembershipType == MembershipType.Member)))
+                    m.GroupRole != GroupRole.NonMember)))
             .ToListAsync(cancellationToken);
 
         return Result.Success(groups);

@@ -32,11 +32,11 @@ internal sealed class SignupWithTokenCommandHandler(
 
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        var member = user.MemberId.HasValue
-            ? await dbContext.Members.FindAsync([user.MemberId.Value], cancellationToken)
-            : null;
+        var memberships = await dbContext.LoadMembershipsAsync(user.Id, cancellationToken);
+        var usable = memberships.Where(m => MembershipLoader.CheckUsable(m.Group).IsSuccess).ToList();
+        var active = usable.FirstOrDefault();
 
-        var token = tokenProvider.Create(user, member);
+        var token = tokenProvider.Create(user, active?.Member, usable.Select(m => m.ToClaim()).ToList());
         return Result.Success(token);
     }
 }

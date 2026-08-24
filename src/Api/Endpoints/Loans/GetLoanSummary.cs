@@ -1,5 +1,6 @@
 using HamroSavings.Api.Extensions;
 using HamroSavings.Api.Infrastructure;
+using HamroSavings.Application.Abstractions.Authentication;
 using HamroSavings.Application.Abstractions.Messaging;
 using HamroSavings.Application.Loans.GetLoanSummary;
 
@@ -20,7 +21,7 @@ public sealed class GetLoanSummary : IEndpoint
                 error => CustomResults.Problem(error));
         })
         .WithTags("Loans")
-        .RequireAuthorization()
+        .RequireAuthorization(Policies.GroupRead)
         .WithSummary("Get loan summary");
     }
 }

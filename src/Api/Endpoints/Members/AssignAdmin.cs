@@ -24,7 +24,7 @@ public sealed class AssignAdmin : IEndpoint
         })
         .WithTags("Members")
         .RequireAuthorization()
-        .WithSummary("Assign a member as group admin (SuperAdmin only)");
+        .WithSummary("Assign a member as group admin (group admin or SuperAdmin)");
     }
 }
 
@@ -44,7 +44,7 @@ public sealed class RemoveAdmin : IEndpoint
         })
         .WithTags("Members")
         .RequireAuthorization()
-        .WithSummary("Demote a group admin back to member (SuperAdmin only)");
+        .WithSummary("Demote a group admin back to member (group admin or SuperAdmin)");
     }
 }
 
@@ -64,6 +64,6 @@ public sealed class ResendInvite : IEndpoint
         })
         .WithTags("Members")
         .RequireAuthorization()
-        .WithSummary("Resend invite email to a member who hasn't activated their account (SuperAdmin only)");
+        .WithSummary("Resend invite email to a member who hasn't activated their account (group admin or SuperAdmin)");
     }
 }

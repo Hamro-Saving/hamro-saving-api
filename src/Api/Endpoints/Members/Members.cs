@@ -1,11 +1,13 @@
 using HamroSavings.Api.Endpoints;
 using HamroSavings.Api.Extensions;
 using HamroSavings.Api.Infrastructure;
+using HamroSavings.Application.Abstractions.Authentication;
 using HamroSavings.Application.Abstractions.Messaging;
 using HamroSavings.Application.Members.Create;
 using HamroSavings.Application.Members.Get;
 using HamroSavings.Application.Members.GetById;
 using HamroSavings.Domain.Members;
+using Microsoft.AspNetCore.Mvc;
 
 namespace HamroSavings.Api.Endpoints.Members;
 
@@ -18,9 +20,8 @@ public sealed class CreateMember : IEndpoint
             ICommandHandler<CreateMemberCommand, Guid> handler,
             CancellationToken ct) =>
         {
-            var memberType = Enum.Parse<MembershipType>(request.MembershipType);
             var command = new CreateMemberCommand(
-                memberType,
+                Enum.Parse<GroupRole>(request.GroupRole),
                 request.FirstName,
                 request.LastName,
                 request.Email,
@@ -35,7 +36,7 @@ public sealed class CreateMember : IEndpoint
         })
         .WithTags("Members")
         .RequireAuthorization()
-        .WithSummary("Create a new member or non-member");
+        .WithSummary("Add someone to a group (group admin or SuperAdmin)");
     }
 }
 
@@ -45,20 +46,19 @@ public sealed class GetMembers : IEndpoint
     {
         app.MapGet("members", async (
             Guid? groupId,
-            bool? includeAdmins,
-            string? membershipType,
+            [FromQuery] string[]? roles,
             IQueryHandler<GetMembersQuery, List<MemberResponse>> handler,
             CancellationToken ct) =>
         {
-            MembershipType? parsedMemberType = membershipType != null ? Enum.Parse<MembershipType>(membershipType) : null;
-            var result = await handler.Handle(new GetMembersQuery(groupId, includeAdmins ?? false, parsedMemberType), ct);
+            var parsedRoles = roles?.Select(Enum.Parse<GroupRole>).ToList();
+            var result = await handler.Handle(new GetMembersQuery(groupId, parsedRoles), ct);
             return result.Match(
                 members => Results.Ok(members),
                 error => CustomResults.Problem(error));
         })
         .WithTags("Members")
-        .RequireAuthorization()
-        .WithSummary("Get all members");
+        .RequireAuthorization(Policies.GroupRead)
+        .WithSummary("Get members, optionally filtered by group role");
     }
 }
 
@@ -77,13 +77,13 @@ public sealed class GetMemberById : IEndpoint
                 error => CustomResults.Problem(error));
         })
         .WithTags("Members")
-        .RequireAuthorization()
+        .RequireAuthorization(Policies.GroupRead)
         .WithSummary("Get member by ID");
     }
 }
 
 public sealed record CreateMemberRequest(
-    string MembershipType,
+    string GroupRole,
     string FirstName,
     string? LastName,
     string? Email,

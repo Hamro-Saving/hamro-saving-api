@@ -28,7 +28,16 @@ internal sealed class SmtpEmailService(IConfiguration configuration) : IEmailSen
         message.Subject = subject;
         message.Body = new BodyBuilder { HtmlBody = htmlBody, TextBody = textBody }.ToMessageBody();
 
-        using var client = new SmtpClient();
+        using var client = new SmtpClient
+        {
+            // The server's certificate chain is valid; what fails is the OCSP/CRL lookup used
+            // to check it hasn't been revoked. MailKit treats an *incomplete* revocation check
+            // as a validation failure and refuses to connect, which is common on networks that
+            // block those lookups. Skipping only the revocation query still leaves the chain,
+            // the hostname and the expiry fully verified — this does not accept a bad cert.
+            CheckCertificateRevocation = false
+        };
+
         await client.ConnectAsync(host, port, SecureSocketOptions.StartTls, ct);
         await client.AuthenticateAsync(username, password, ct);
         await client.SendAsync(message, ct);

@@ -2,6 +2,11 @@ using HamroSavings.SharedKernel;
 
 namespace HamroSavings.Domain.Members;
 
+/// <summary>
+/// One person's membership of one group. This is the join between a <c>User</c> and a <c>Group</c>,
+/// and it carries the group axis of authorization (<see cref="GroupRole"/>). A person with rows in
+/// several groups holds a different role in each. NonMembers may exist without a login at all.
+/// </summary>
 public sealed class Member : Entity
 {
     public Guid Id { get; private set; }
@@ -11,7 +16,8 @@ public sealed class Member : Entity
     public string? PhoneNumber { get; private set; }
     public string? Address { get; private set; }
     public Guid GroupId { get; private set; }
-    public MembershipType MembershipType { get; private set; }
+    public Guid? UserId { get; private set; }
+    public GroupRole GroupRole { get; private set; } = GroupRole.Member;
     public bool IsActive { get; private set; } = true;
     public DateTime CreatedAt { get; private set; }
 
@@ -24,7 +30,9 @@ public sealed class Member : Entity
         string lastName,
         string email,
         string? phoneNumber,
-        Guid groupId)
+        Guid groupId,
+        GroupRole groupRole = GroupRole.Member,
+        string? address = null)
     {
         var member = new Member
         {
@@ -33,8 +41,9 @@ public sealed class Member : Entity
             LastName = lastName,
             Email = email.ToLowerInvariant(),
             PhoneNumber = phoneNumber,
+            Address = address,
             GroupId = groupId,
-            MembershipType = MembershipType.Member,
+            GroupRole = groupRole,
             IsActive = true,
             CreatedAt = DateTime.UtcNow
         };
@@ -58,33 +67,9 @@ public sealed class Member : Entity
             PhoneNumber = phoneNumber,
             Address = address,
             GroupId = groupId,
-            MembershipType = MembershipType.NonMember,
+            GroupRole = GroupRole.NonMember,
             IsActive = true,
             CreatedAt = DateTime.UtcNow
-        };
-    }
-
-    /// <summary>Creates a Member record for an existing User (used during data migration).</summary>
-    public static Member CreateFromExistingUser(
-        Guid existingId,
-        string firstName,
-        string lastName,
-        string email,
-        string? phoneNumber,
-        Guid groupId,
-        DateTime createdAt)
-    {
-        return new Member
-        {
-            Id = existingId,
-            FirstName = firstName,
-            LastName = lastName,
-            Email = email.ToLowerInvariant(),
-            PhoneNumber = phoneNumber,
-            GroupId = groupId,
-            MembershipType = MembershipType.Member,
-            IsActive = true,
-            CreatedAt = createdAt
         };
     }
 
@@ -97,6 +82,9 @@ public sealed class Member : Entity
         Address = address;
     }
 
+    public void LinkUser(Guid userId) => UserId = userId;
+    public void UnlinkUser() => UserId = null;
+    public void ChangeGroupRole(GroupRole role) => GroupRole = role;
     public void Deactivate() => IsActive = false;
     public void Activate() => IsActive = true;
 }

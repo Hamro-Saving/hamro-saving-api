@@ -1,5 +1,6 @@
 using HamroSavings.Api.Extensions;
 using HamroSavings.Api.Infrastructure;
+using HamroSavings.Application.Abstractions.Authentication;
 using HamroSavings.Application.Abstractions.Messaging;
 using HamroSavings.Application.Finance.WithdrawFixedDeposit;
 
@@ -23,8 +24,8 @@ public sealed class WithdrawFixedDeposit : IEndpoint
                 error => CustomResults.Problem(error));
         })
         .WithTags("Finance")
-        .RequireAuthorization()
-        .WithSummary("Withdraw a fixed deposit, recording the interest actually returned (Admin/SuperAdmin only)");
+        .RequireAuthorization(Policies.GroupAdmin)
+        .WithSummary("Withdraw a fixed deposit, recording the interest actually returned (group admin only)");
     }
 }
 

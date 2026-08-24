@@ -16,14 +16,14 @@ internal sealed class GetLoanSummaryQueryHandler(
     {
         var loansQuery = dbContext.Loans.AsQueryable();
 
-        if (!userContext.IsSuperAdmin)
+        // A SuperAdmin may read across groups; everyone else is pinned to theirs.
+        var groupResult = userContext.ResolveReadGroupId(query.GroupId);
+        if (groupResult.IsFailure) return Result.Failure<LoanSummaryResponse>(groupResult.Error);
+        var groupId = groupResult.Value;
+
+        if (groupId.HasValue)
         {
-            var groupId = userContext.GroupId;
-            loansQuery = loansQuery.Where(l => l.GroupId == groupId);
-        }
-        else if (query.GroupId.HasValue)
-        {
-            loansQuery = loansQuery.Where(l => l.GroupId == query.GroupId.Value);
+            loansQuery = loansQuery.Where(l => l.GroupId == groupId.Value);
         }
 
         var loans = await loansQuery.ToListAsync(cancellationToken);

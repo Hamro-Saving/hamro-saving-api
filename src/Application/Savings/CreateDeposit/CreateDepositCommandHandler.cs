@@ -18,7 +18,7 @@ internal sealed class CreateDepositCommandHandler(
     public async Task<Result<Guid>> Handle(CreateDepositCommand command, CancellationToken cancellationToken = default)
     {
         // Admins and members act in the group on their token; only a SuperAdmin names one
-        var groupResult = userContext.ResolveGroupId(command.GroupId);
+        var groupResult = userContext.ResolveWriteGroupId();
         if (groupResult.IsFailure) return Result.Failure<Guid>(groupResult.Error);
         var groupId = groupResult.Value;
 

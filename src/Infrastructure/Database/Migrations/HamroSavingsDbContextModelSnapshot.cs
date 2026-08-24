@@ -467,6 +467,11 @@ namespace HamroSavings.Infrastructure.Database.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("group_id");
 
+                    b.Property<string>("GroupRole")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("group_role");
+
                     b.Property<bool>("IsActive")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
@@ -478,23 +483,30 @@ namespace HamroSavings.Infrastructure.Database.Migrations
                         .HasColumnType("character varying(100)")
                         .HasColumnName("last_name");
 
-                    b.Property<string>("MembershipType")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("membership_type");
-
                     b.Property<string>("PhoneNumber")
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)")
                         .HasColumnName("phone_number");
 
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
                     b.HasKey("Id")
                         .HasName("pk_members");
+
+                    b.HasIndex("GroupId")
+                        .HasDatabaseName("ix_members_group_id");
 
                     b.HasIndex("Email", "GroupId")
                         .IsUnique()
                         .HasDatabaseName("ix_members_email_group_id")
                         .HasFilter("email IS NOT NULL");
+
+                    b.HasIndex("UserId", "GroupId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_members_user_id_group_id")
+                        .HasFilter("user_id IS NOT NULL");
 
                     b.ToTable("members", "public");
                 });
@@ -600,19 +612,16 @@ namespace HamroSavings.Infrastructure.Database.Migrations
                         .HasDefaultValue(false)
                         .HasColumnName("is_active");
 
-                    b.Property<Guid?>("MemberId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("member_id");
+                    b.Property<bool>("IsSuperAdmin")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_super_admin");
 
                     b.Property<string>("PasswordHash")
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("password_hash");
-
-                    b.Property<string>("Role")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("role");
 
                     b.HasKey("Id")
                         .HasName("pk_users");
@@ -626,11 +635,6 @@ namespace HamroSavings.Infrastructure.Database.Migrations
                         .HasDatabaseName("ix_users_invite_token")
                         .HasFilter("invite_token IS NOT NULL");
 
-                    b.HasIndex("MemberId")
-                        .IsUnique()
-                        .HasDatabaseName("ix_users_member_id")
-                        .HasFilter("member_id IS NOT NULL");
-
                     b.ToTable("users", "public");
                 });
 
@@ -642,6 +646,22 @@ namespace HamroSavings.Infrastructure.Database.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_loan_payments_loans_loan_id");
+                });
+
+            modelBuilder.Entity("HamroSavings.Domain.Members.Member", b =>
+                {
+                    b.HasOne("HamroSavings.Domain.Groups.Group", null)
+                        .WithMany()
+                        .HasForeignKey("GroupId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_members_groups_group_id");
+
+                    b.HasOne("HamroSavings.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_members_users_user_id");
                 });
 #pragma warning restore 612, 618
         }

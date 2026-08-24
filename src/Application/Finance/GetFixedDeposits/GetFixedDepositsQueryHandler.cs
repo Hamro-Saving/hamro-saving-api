@@ -15,14 +15,14 @@ internal sealed class GetFixedDepositsQueryHandler(
     {
         var fdQuery = dbContext.FixedDeposits.AsQueryable();
 
-        if (!userContext.IsSuperAdmin)
+        // A SuperAdmin may read across groups; everyone else is pinned to theirs.
+        var groupResult = userContext.ResolveReadGroupId(query.GroupId);
+        if (groupResult.IsFailure) return Result.Failure<List<FixedDepositResponse>>(groupResult.Error);
+        var groupId = groupResult.Value;
+
+        if (groupId.HasValue)
         {
-            var groupId = userContext.GroupId;
-            fdQuery = fdQuery.Where(fd => fd.GroupId == groupId);
-        }
-        else if (query.GroupId.HasValue)
-        {
-            fdQuery = fdQuery.Where(fd => fd.GroupId == query.GroupId.Value);
+            fdQuery = fdQuery.Where(fd => fd.GroupId == groupId.Value);
         }
 
         var fixedDeposits = await fdQuery

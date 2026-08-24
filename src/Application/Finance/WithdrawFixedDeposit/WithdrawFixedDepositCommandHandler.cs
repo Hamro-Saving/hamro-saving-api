@@ -15,7 +15,7 @@ internal sealed class WithdrawFixedDepositCommandHandler(
 {
     public async Task<Result> Handle(WithdrawFixedDepositCommand command, CancellationToken cancellationToken = default)
     {
-        if (!userContext.IsAdmin && !userContext.IsSuperAdmin)
+        if (!userContext.IsGroupAdmin)
             return Result.Failure(UserErrors.Unauthorized);
 
         var fixedDeposit = await dbContext.FixedDeposits
@@ -24,7 +24,7 @@ internal sealed class WithdrawFixedDepositCommandHandler(
         if (fixedDeposit is null)
             return Result.Failure(FixedDepositErrors.NotFound(command.FixedDepositId));
 
-        if (!userContext.IsSuperAdmin && fixedDeposit.GroupId != userContext.GroupId)
+        if (!userContext.CanWrite(fixedDeposit.GroupId))
             return Result.Failure(FixedDepositErrors.NotInGroup);
 
         var result = fixedDeposit.Withdraw(command.InterestEarned, command.WithdrawnAt, userContext.UserId);

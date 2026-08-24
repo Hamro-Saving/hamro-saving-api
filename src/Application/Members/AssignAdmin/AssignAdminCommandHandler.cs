@@ -1,3 +1,4 @@
+using HamroSavings.Application.Abstractions.Authentication;
 using HamroSavings.Application.Abstractions.Data;
 using HamroSavings.Application.Abstractions.Messaging;
 using HamroSavings.Domain.Members;
@@ -7,7 +8,13 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HamroSavings.Application.Members.AssignAdmin;
 
-internal sealed class AssignAdminCommandHandler(IApplicationDbContext dbContext)
+/// <summary>
+/// Promotes one membership to group admin. A group admin may do this inside their own group; a
+/// SuperAdmin may do it anywhere, which is how a newly created group gets its first admin.
+/// </summary>
+internal sealed class AssignAdminCommandHandler(
+    IApplicationDbContext dbContext,
+    IUserContext userContext)
     : ICommandHandler<AssignAdminCommand>
 {
     public async Task<Result> Handle(AssignAdminCommand command, CancellationToken cancellationToken = default)
@@ -18,20 +25,21 @@ internal sealed class AssignAdminCommandHandler(IApplicationDbContext dbContext)
         if (member is null)
             return Result.Failure(MemberErrors.NotFound(command.MemberId));
 
-        // NonMembers cannot be assigned as admin
-        if (member.MembershipType == MembershipType.NonMember)
+        var authResult = userContext.EnsureCanAdminister(member.GroupId);
+        if (authResult.IsFailure) return authResult;
+
+        // A NonMember is a borrower, not a participant, so cannot run the group.
+        if (member.GroupRole == GroupRole.NonMember)
             return Result.Failure(UserErrors.Unauthorized);
 
-        var user = await dbContext.Users
-            .FirstOrDefaultAsync(u => u.MemberId == command.MemberId, cancellationToken);
+        // Admin duties need a login to act through.
+        if (member.UserId is null)
+            return Result.Failure(MemberErrors.NoLinkedUser(member.Id));
 
-        if (user is null)
-            return Result.Failure(MemberErrors.NotFound(command.MemberId));
-
-        if (user.Role == UserRole.Admin)
+        if (member.GroupRole == GroupRole.Admin)
             return Result.Success();
 
-        user.ChangeRole(UserRole.Admin);
+        member.ChangeGroupRole(GroupRole.Admin);
 
         await dbContext.SaveChangesAsync(cancellationToken);
         return Result.Success();

@@ -15,11 +15,11 @@ internal sealed class RecordLoanPaymentCommandHandler(
 {
     public async Task<Result<Guid>> Handle(RecordLoanPaymentCommand command, CancellationToken cancellationToken = default)
     {
-        if (!userContext.IsAdmin && !userContext.IsSuperAdmin)
+        if (!userContext.IsGroupAdmin)
             return Result.Failure<Guid>(UserErrors.Unauthorized);
 
         // Admins and members act in the group on their token; only a SuperAdmin names one
-        var groupResult = userContext.ResolveGroupId(command.GroupId);
+        var groupResult = userContext.ResolveWriteGroupId();
         if (groupResult.IsFailure) return Result.Failure<Guid>(groupResult.Error);
         var groupId = groupResult.Value;
 
@@ -31,7 +31,7 @@ internal sealed class RecordLoanPaymentCommandHandler(
             return Result.Failure<Guid>(LoanErrors.NotFound(command.LoanId));
         }
 
-        if (!userContext.IsSuperAdmin && loan.GroupId != groupId)
+        if (loan.GroupId != groupId)
         {
             return Result.Failure<Guid>(LoanErrors.NotInGroup);
         }

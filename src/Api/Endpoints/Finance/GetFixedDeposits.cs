@@ -1,5 +1,6 @@
 using HamroSavings.Api.Extensions;
 using HamroSavings.Api.Infrastructure;
+using HamroSavings.Application.Abstractions.Authentication;
 using HamroSavings.Application.Abstractions.Messaging;
 using HamroSavings.Application.Finance.GetFixedDeposits;
 
@@ -20,7 +21,7 @@ public sealed class GetFixedDeposits : IEndpoint
                 error => CustomResults.Problem(error));
         })
         .WithTags("Finance")
-        .RequireAuthorization()
+        .RequireAuthorization(Policies.GroupRead)
         .WithSummary("Get fixed deposits");
     }
 }

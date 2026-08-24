@@ -22,7 +22,13 @@ internal sealed class GetLoanPaymentsQueryHandler(
             return Result.Failure<List<LoanPaymentResponse>>(LoanErrors.NotFound(query.LoanId));
         }
 
-        if (!userContext.IsSuperAdmin && loan.GroupId != userContext.GroupId)
+        if (!userContext.CanRead(loan.GroupId))
+        {
+            return Result.Failure<List<LoanPaymentResponse>>(LoanErrors.NotInGroup);
+        }
+
+        // A non-member follows their own loan and no one else's.
+        if (userContext.SeesOnlyOwnRecords() && loan.BorrowerId != userContext.ActiveMemberId)
         {
             return Result.Failure<List<LoanPaymentResponse>>(LoanErrors.NotInGroup);
         }

@@ -2,21 +2,24 @@ using HamroSavings.SharedKernel;
 
 namespace HamroSavings.Domain.Users;
 
+/// <summary>
+/// A login identity. Carries the platform axis of authorization only — what a person may do
+/// inside a group lives on their <c>Member</c> row for that group, one per group.
+/// </summary>
 public sealed class User : Entity
 {
     public Guid Id { get; private set; }
     public string Email { get; private set; } = string.Empty;
     public string PasswordHash { get; private set; } = string.Empty;
-    public UserRole Role { get; private set; }
+    public bool IsSuperAdmin { get; private set; }
     public bool IsActive { get; private set; }
-    public Guid? MemberId { get; private set; }
     public Guid? InviteToken { get; private set; }
     public DateTime? InviteTokenExpiresAt { get; private set; }
     public DateTime CreatedAt { get; private set; }
 
     private User() { }
 
-    /// <summary>Creates a SuperAdmin user with full profile info.</summary>
+    /// <summary>Creates a platform SuperAdmin. Belongs to no group until given a Member row.</summary>
     public static User CreateSuperAdmin(
         string email,
         string passwordHash)
@@ -26,7 +29,7 @@ public sealed class User : Entity
             Id = Guid.CreateVersion7(),
             Email = email.ToLowerInvariant(),
             PasswordHash = passwordHash,
-            Role = UserRole.SuperAdmin,
+            IsSuperAdmin = true,
             IsActive = true,
             CreatedAt = DateTime.UtcNow
         };
@@ -34,17 +37,16 @@ public sealed class User : Entity
         return user;
     }
 
-    /// <summary>Creates an inactive user linked to a Member, pending invite acceptance.</summary>
-    public static User CreateMember(string email, Guid memberId, string passwordHash)
+    /// <summary>Creates an inactive login pending invite acceptance. Group membership is a separate Member row.</summary>
+    public static User CreateMember(string email, string passwordHash)
     {
         return new User
         {
             Id = Guid.CreateVersion7(),
             Email = email.ToLowerInvariant(),
             PasswordHash = passwordHash,
-            Role = UserRole.Member,
+            IsSuperAdmin = false,
             IsActive = false,
-            MemberId = memberId,
             CreatedAt = DateTime.UtcNow
         };
     }
@@ -66,7 +68,8 @@ public sealed class User : Entity
 
     public void UpdateEmail(string email) => Email = email.ToLowerInvariant();
     public void UpdatePasswordHash(string passwordHash) => PasswordHash = passwordHash;
-    public void ChangeRole(UserRole role) => Role = role;
+    public void GrantSuperAdmin() => IsSuperAdmin = true;
+    public void RevokeSuperAdmin() => IsSuperAdmin = false;
     public void Deactivate() => IsActive = false;
     public void Activate() => IsActive = true;
 }

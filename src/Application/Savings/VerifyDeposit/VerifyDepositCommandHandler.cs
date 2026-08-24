@@ -15,7 +15,7 @@ internal sealed class VerifyDepositCommandHandler(
 {
     public async Task<Result> Handle(VerifyDepositCommand command, CancellationToken cancellationToken = default)
     {
-        if (!userContext.IsSuperAdmin && !userContext.IsAdmin)
+        if (!userContext.IsGroupAdmin)
         {
             return Result.Failure(UserErrors.Unauthorized);
         }
@@ -28,7 +28,7 @@ internal sealed class VerifyDepositCommandHandler(
             return Result.Failure(DepositErrors.NotFound(command.DepositId));
         }
 
-        if (!userContext.IsSuperAdmin && deposit.GroupId != userContext.GroupId)
+        if (!userContext.CanWrite(deposit.GroupId))
         {
             return Result.Failure(DepositErrors.NotInGroup);
         }

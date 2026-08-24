@@ -1,12 +1,16 @@
+using HamroSavings.Application.Abstractions.Authentication;
 using HamroSavings.Application.Abstractions.Data;
 using HamroSavings.Application.Abstractions.Messaging;
 using HamroSavings.Domain.Members;
+using HamroSavings.Domain.Users;
 using HamroSavings.SharedKernel;
 using Microsoft.EntityFrameworkCore;
 
 namespace HamroSavings.Application.Members.Update;
 
-internal sealed class UpdateMemberCommandHandler(IApplicationDbContext dbContext)
+internal sealed class UpdateMemberCommandHandler(
+    IApplicationDbContext dbContext,
+    IUserContext userContext)
     : ICommandHandler<UpdateMemberCommand>
 {
     public async Task<Result> Handle(UpdateMemberCommand command, CancellationToken cancellationToken = default)
@@ -16,6 +20,9 @@ internal sealed class UpdateMemberCommandHandler(IApplicationDbContext dbContext
 
         if (member is null)
             return Result.Failure(MemberErrors.NotFound(command.MemberId));
+
+        var authResult = userContext.EnsureCanAdminister(member.GroupId);
+        if (authResult.IsFailure) return authResult;
 
         if (!string.IsNullOrEmpty(command.Email))
         {
@@ -30,10 +37,10 @@ internal sealed class UpdateMemberCommandHandler(IApplicationDbContext dbContext
 
         member.UpdateProfile(command.FirstName, command.LastName, command.Email, command.PhoneNumber, command.Address);
 
-        if (member.MembershipType == MembershipType.Member && !string.IsNullOrEmpty(command.Email))
+        if (member.GroupRole.Participates() && !string.IsNullOrEmpty(command.Email))
         {
             var user = await dbContext.Users
-                .FirstOrDefaultAsync(u => u.MemberId == member.Id, cancellationToken);
+                .FirstOrDefaultAsync(u => u.Id == member.UserId, cancellationToken);
             user?.UpdateEmail(command.Email);
         }
 

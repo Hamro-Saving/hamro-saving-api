@@ -1,6 +1,7 @@
 using HamroSavings.Api.Endpoints;
 using HamroSavings.Api.Extensions;
 using HamroSavings.Api.Infrastructure;
+using HamroSavings.Application.Abstractions.Authentication;
 using HamroSavings.Application.Abstractions.Messaging;
 using HamroSavings.Application.Groups.Delete;
 
@@ -21,7 +22,7 @@ public sealed class DeleteGroup : IEndpoint
                 error => CustomResults.Problem(error));
         })
         .WithTags("Groups")
-        .RequireAuthorization()
+        .RequireAuthorization(Policies.SuperAdmin)
         .WithSummary("Delete a group (SuperAdmin only, group must have no data)");
     }
 }

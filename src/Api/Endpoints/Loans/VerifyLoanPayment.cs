@@ -1,5 +1,6 @@
 using HamroSavings.Api.Extensions;
 using HamroSavings.Api.Infrastructure;
+using HamroSavings.Application.Abstractions.Authentication;
 using HamroSavings.Application.Abstractions.Messaging;
 using HamroSavings.Application.Loans.VerifyPayment;
 
@@ -20,8 +21,8 @@ public sealed class VerifyLoanPayment : IEndpoint
                 error => CustomResults.Problem(error));
         })
         .WithTags("Loans")
-        .RequireAuthorization()
-        .WithSummary("Verify a loan payment (Admin/SuperAdmin only)");
+        .RequireAuthorization(Policies.GroupAdmin)
+        .WithSummary("Verify a loan payment (group admin only)");
     }
 }
 

@@ -22,12 +22,12 @@ internal sealed class UpdateLoanCommandHandler(
         if (loan is null)
             return Result.Failure(LoanErrors.NotFound(command.LoanId));
 
-        if (!userContext.IsSuperAdmin && loan.GroupId != userContext.GroupId)
+        if (!userContext.CanWrite(loan.GroupId))
             return Result.Failure(LoanErrors.NotInGroup);
 
         // Members can only edit their own Member-type loans; admins can edit any in their group
-        if (!userContext.IsSuperAdmin && !userContext.IsAdmin &&
-            (loan.BorrowerType != "Member" || loan.BorrowerId != userContext.MemberId))
+        if (!userContext.IsGroupAdmin &&
+            (loan.BorrowerType != "Member" || loan.BorrowerId != userContext.ActiveMemberId))
             return Result.Failure(UserErrors.Unauthorized);
 
         var hasApprovals = await dbContext.LoanApprovals
@@ -37,7 +37,7 @@ internal sealed class UpdateLoanCommandHandler(
             return Result.Failure(LoanErrors.CannotModifyApproved);
 
         decimal interestRate;
-        if (command.InterestRate.HasValue && (userContext.IsAdmin || userContext.IsSuperAdmin))
+        if (command.InterestRate.HasValue && (userContext.IsGroupAdmin))
         {
             interestRate = command.InterestRate.Value;
         }

@@ -16,7 +16,10 @@ internal sealed class GetFinancialSummaryQueryHandler(
 {
     public async Task<Result<FinancialSummaryResponse>> Handle(GetFinancialSummaryQuery query, CancellationToken cancellationToken = default)
     {
-        Guid? groupId = userContext.IsSuperAdmin ? query.GroupId : userContext.GroupId;
+        // A SuperAdmin may read across groups; everyone else is pinned to theirs.
+        var groupResult = userContext.ResolveReadGroupId(query.GroupId);
+        if (groupResult.IsFailure) return Result.Failure<FinancialSummaryResponse>(groupResult.Error);
+        Guid? groupId = groupResult.Value;
 
         var depositsQuery = dbContext.Deposits.AsQueryable();
         var loansQuery = dbContext.Loans.AsQueryable();

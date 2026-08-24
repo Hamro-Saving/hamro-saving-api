@@ -11,10 +11,7 @@ public sealed class CreateMemberCommandValidator : AbstractValidator<CreateMembe
             .NotEmpty().WithMessage("First name is required.")
             .MaximumLength(200).WithMessage("First name must not exceed 200 characters.");
 
-        RuleFor(x => x.GroupId)
-            .NotEmpty().WithMessage("Group ID is required.");
-
-        When(x => x.MembershipType == MembershipType.Member, () =>
+        When(x => x.GroupRole.Participates(), () =>
         {
             RuleFor(x => x.LastName)
                 .NotEmpty().WithMessage("Last name is required.")
@@ -25,7 +22,7 @@ public sealed class CreateMemberCommandValidator : AbstractValidator<CreateMembe
                 .EmailAddress().WithMessage("Email must be a valid email address.");
         });
 
-        When(x => x.MembershipType == MembershipType.NonMember, () =>
+        When(x => x.GroupRole == GroupRole.NonMember, () =>
         {
             RuleFor(x => x.Email)
                 .EmailAddress().When(x => !string.IsNullOrEmpty(x.Email))

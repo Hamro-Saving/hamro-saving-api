@@ -30,7 +30,7 @@ public static class ApplicationBuilderExtensions
 
     private static void SeedSuperAdmin(HamroSavingsDbContext dbContext, IConfiguration configuration, IPasswordHasher passwordHasher)
     {
-        if (dbContext.Users.Any(u => u.Role == UserRole.SuperAdmin))
+        if (dbContext.Users.Any(u => u.IsSuperAdmin))
             return;
 
         var email = configuration["SuperAdmin:Email"] ?? throw new InvalidOperationException("SuperAdmin:Email is not configured.");

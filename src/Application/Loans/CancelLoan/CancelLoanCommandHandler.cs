@@ -15,7 +15,7 @@ internal sealed class CancelLoanCommandHandler(
 {
     public async Task<Result> Handle(CancelLoanCommand command, CancellationToken cancellationToken = default)
     {
-        if (!userContext.IsAdmin && !userContext.IsSuperAdmin)
+        if (!userContext.IsGroupAdmin)
             return Result.Failure(UserErrors.Unauthorized);
 
         var loan = await dbContext.Loans
@@ -24,7 +24,7 @@ internal sealed class CancelLoanCommandHandler(
         if (loan is null)
             return Result.Failure(LoanErrors.NotFound(command.LoanId));
 
-        if (!userContext.IsSuperAdmin && loan.GroupId != userContext.GroupId)
+        if (!userContext.CanWrite(loan.GroupId))
             return Result.Failure(LoanErrors.NotInGroup);
 
         var result = loan.Cancel();

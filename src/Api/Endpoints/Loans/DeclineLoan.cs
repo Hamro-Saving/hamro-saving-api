@@ -1,5 +1,6 @@
 using HamroSavings.Api.Extensions;
 using HamroSavings.Api.Infrastructure;
+using HamroSavings.Application.Abstractions.Authentication;
 using HamroSavings.Application.Abstractions.Messaging;
 using HamroSavings.Application.Loans.CastVote;
 
@@ -20,7 +21,7 @@ public sealed class DeclineLoan : IEndpoint
                 error => CustomResults.Problem(error));
         })
         .WithTags("Loans")
-        .RequireAuthorization()
+        .RequireAuthorization(Policies.GroupMember)
         .WithSummary("Decline a loan (member vote or admin instant-decline)");
     }
 }

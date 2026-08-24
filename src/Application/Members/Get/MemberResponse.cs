@@ -1,5 +1,4 @@
 using HamroSavings.Domain.Members;
-using HamroSavings.Domain.Users;
 
 namespace HamroSavings.Application.Members.Get;
 
@@ -9,8 +8,7 @@ public sealed record MemberResponse(
     string FirstName,
     string? LastName,
     string FullName,
-    UserRole? Role,
-    MembershipType MembershipType,
+    GroupRole GroupRole,
     Guid GroupId,
     bool IsActive,
     bool HasAccount,

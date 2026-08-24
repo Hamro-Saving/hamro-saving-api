@@ -1,6 +1,7 @@
 using HamroSavings.Api.Endpoints;
 using HamroSavings.Api.Extensions;
 using HamroSavings.Api.Infrastructure;
+using HamroSavings.Application.Abstractions.Authentication;
 using HamroSavings.Application.Abstractions.Messaging;
 using HamroSavings.Application.Groups.Get;
 using HamroSavings.Application.Groups.GetById;
@@ -22,7 +23,7 @@ public sealed class GetGroupById : IEndpoint
                 error => CustomResults.Problem(error));
         })
         .WithTags("Groups")
-        .RequireAuthorization()
+        .RequireAuthorization(Policies.GroupRead)
         .WithSummary("Get group by ID");
     }
 }

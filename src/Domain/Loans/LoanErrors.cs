@@ -40,9 +40,6 @@ public static class LoanErrors
     public static readonly Error CannotCancelAfterDisbursement =
         Error.Problem("Loan.CannotCancelAfterDisbursement", "A loan can only be cancelled before its disbursement starts.");
 
-    public static readonly Error AdminCannotVote =
-        Error.Forbidden("Loan.AdminCannotVote", "Admins do not vote on loans; approval is decided by the group's members.");
-
     public static readonly Error AlreadyVoted =
         Error.Conflict("Loan.AlreadyVoted", "You have already voted on this loan.");
 

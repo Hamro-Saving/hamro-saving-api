@@ -17,10 +17,16 @@ internal sealed class GetLoanByIdQueryHandler(
     {
         var loanQuery = dbContext.Loans.Where(l => l.Id == query.LoanId);
 
-        if (!userContext.IsSuperAdmin && userContext.GroupId.HasValue)
+        if (!userContext.IsSuperAdmin)
         {
-            var groupId = userContext.GroupId;
+            var groupId = userContext.ActiveGroupId;
             loanQuery = loanQuery.Where(l => l.GroupId == groupId);
+        }
+
+        if (userContext.SeesOnlyOwnRecords())
+        {
+            var ownMemberId = userContext.ActiveMemberId;
+            loanQuery = loanQuery.Where(l => l.BorrowerId == ownMemberId);
         }
 
         var loan = await loanQuery.FirstOrDefaultAsync(cancellationToken);
@@ -48,7 +54,7 @@ internal sealed class GetLoanByIdQueryHandler(
             {
                 u.Id,
                 Name = dbContext.Members
-                    .Where(m => m.Id == u.MemberId)
+                    .Where(m => m.UserId == u.Id && m.GroupId == loan.GroupId)
                     .Select(m => m.LastName == null ? m.FirstName : m.FirstName + " " + m.LastName)
                     .FirstOrDefault() ?? "Unknown"
             })
@@ -70,7 +76,7 @@ internal sealed class GetLoanByIdQueryHandler(
         var requiredApprovals = LoanVoting.VotesNeeded(totalVoters);
         var now = DateTime.UtcNow;
 
-        return Result.Success(new LoanResponse(
+        var response = new LoanResponse(
             loan.Id,
             loan.BorrowerId,
             borrowerName,
@@ -99,6 +105,10 @@ internal sealed class GetLoanByIdQueryHandler(
             declinerList.Any(a => a.ApproverId == userContext.UserId),
             approverList,
             declinerList,
-            loan.CreatedAt));
+            loan.CreatedAt);
+
+        return Result.Success(userContext.SeesOnlyOwnRecords()
+            ? response.WithoutGroupInternals()
+            : response);
     }
 }

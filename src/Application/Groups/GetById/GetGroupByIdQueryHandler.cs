@@ -17,7 +17,7 @@ internal sealed class GetGroupByIdQueryHandler(
 {
     public async Task<Result<GroupResponse>> Handle(GetGroupByIdQuery query, CancellationToken cancellationToken = default)
     {
-        if (!userContext.IsSuperAdmin && userContext.GroupId != query.GroupId)
+        if (!userContext.CanRead(query.GroupId))
         {
             return Result.Failure<GroupResponse>(GroupErrors.NotFound(query.GroupId));
         }
@@ -37,7 +37,7 @@ internal sealed class GetGroupByIdQueryHandler(
                 g.CreatedAt,
                 g.UpdatedAt,
                 dbContext.Members.Count(m => m.GroupId == g.Id && m.IsActive &&
-                    m.MembershipType == MembershipType.Member)))
+                    m.GroupRole != GroupRole.NonMember)))
             .FirstOrDefaultAsync(cancellationToken);
 
         if (group is null)

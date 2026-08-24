@@ -14,10 +14,8 @@ internal sealed class UpdateGroupCommandHandler(
 {
     public async Task<Result> Handle(UpdateGroupCommand command, CancellationToken cancellationToken = default)
     {
-        if (!userContext.IsSuperAdmin && userContext.GroupId != command.GroupId)
-        {
-            return Result.Failure(GroupErrors.NotFound(command.GroupId));
-        }
+        var authResult = userContext.EnsureCanAdminister(command.GroupId);
+        if (authResult.IsFailure) return authResult;
 
         var group = await dbContext.Groups
             .FirstOrDefaultAsync(g => g.Id == command.GroupId, cancellationToken);

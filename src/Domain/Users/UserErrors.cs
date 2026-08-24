@@ -22,6 +22,12 @@ public static class UserErrors
     public static readonly Error NotInGroup =
         Error.Forbidden("User.NotInGroup", "You do not have access to this group.");
 
+    public static readonly Error NoActiveGroup =
+        Error.Forbidden("User.NoActiveGroup", "You are not acting inside a group. Select a group first.");
+
+    public static readonly Error NotAGroupAdmin =
+        Error.Forbidden("User.NotAGroupAdmin", "Only a group admin can perform this action.");
+
     public static readonly Error InviteTokenInvalid =
         Error.Problem("User.InviteTokenInvalid", "The invite link is invalid.");
 

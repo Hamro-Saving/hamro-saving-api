@@ -1,5 +1,6 @@
 using HamroSavings.Api.Extensions;
 using HamroSavings.Api.Infrastructure;
+using HamroSavings.Application.Abstractions.Authentication;
 using HamroSavings.Application.Abstractions.Messaging;
 using HamroSavings.Application.Savings.CreateDeposit;
 using HamroSavings.Domain.Savings;
@@ -31,7 +32,7 @@ public sealed class CreateDeposit : IEndpoint
                 error => CustomResults.Problem(error));
         })
         .WithTags("Savings")
-        .RequireAuthorization()
+        .RequireAuthorization(Policies.GroupMember)
         .WithSummary("Record a deposit");
     }
 }

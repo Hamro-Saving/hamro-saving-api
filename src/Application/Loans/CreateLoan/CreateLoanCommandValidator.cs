@@ -14,9 +14,6 @@ public sealed class CreateLoanCommandValidator : AbstractValidator<CreateLoanCom
             .Must(t => t == "Member" || t == "NonMember")
             .WithMessage("Borrower type must be 'Member' or 'NonMember'.");
 
-        RuleFor(x => x.GroupId)
-            .NotEmpty().WithMessage("Group ID is required.");
-
         RuleFor(x => x.Amount)
             .GreaterThan(0).WithMessage("Loan amount must be greater than zero.");
 

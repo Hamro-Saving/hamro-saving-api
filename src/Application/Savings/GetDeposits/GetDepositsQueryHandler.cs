@@ -15,14 +15,14 @@ internal sealed class GetDepositsQueryHandler(
     {
         var depositsQuery = dbContext.Deposits.AsQueryable();
 
-        if (!userContext.IsSuperAdmin)
+        // A SuperAdmin may read across groups; everyone else is pinned to theirs.
+        var groupResult = userContext.ResolveReadGroupId(query.GroupId);
+        if (groupResult.IsFailure) return Result.Failure<List<DepositResponse>>(groupResult.Error);
+        var groupId = groupResult.Value;
+
+        if (groupId.HasValue)
         {
-            var groupId = userContext.GroupId;
-            depositsQuery = depositsQuery.Where(d => d.GroupId == groupId);
-        }
-        else if (query.GroupId.HasValue)
-        {
-            depositsQuery = depositsQuery.Where(d => d.GroupId == query.GroupId.Value);
+            depositsQuery = depositsQuery.Where(d => d.GroupId == groupId.Value);
         }
 
         if (query.MemberId.HasValue)
