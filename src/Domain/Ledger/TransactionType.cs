@@ -11,4 +11,7 @@ public enum TransactionType
     FixedDepositWithdrawal = 5,
     FixedDepositInterest = 6,
     Expense = 7,
+
+    /// <summary>Interest a late-joining member paid to catch up with the group.</summary>
+    LateJoinerInterest = 8,
 }

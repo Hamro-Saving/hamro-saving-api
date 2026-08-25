@@ -1,3 +1,4 @@
+using HamroSavings.Domain.Ledger;
 using HamroSavings.Domain.Loans;
 
 namespace UnitTests.Loans;
@@ -8,6 +9,8 @@ namespace UnitTests.Loans;
 /// </summary>
 public class LoanLifecycleTests
 {
+    private static readonly CashInHand Funded = new(10_000_000m);
+
     private static readonly DateTime Start = new(2026, 6, 1, 0, 0, 0, DateTimeKind.Utc);
 
     private static Loan NewLoan() =>
@@ -49,7 +52,7 @@ public class LoanLifecycleTests
     {
         var loan = NewLoan();
 
-        var result = loan.CompleteDisbursement(Guid.NewGuid(), Start);
+        var result = loan.CompleteDisbursement(Guid.NewGuid(), Start, Funded);
 
         Assert.True(result.IsFailure);
         Assert.Equal("Loan.NotApproved", result.Error.Code);
@@ -64,7 +67,7 @@ public class LoanLifecycleTests
         var disbursedAt = Start.AddDays(9);
         loan.ApproveLoan();
 
-        Assert.True(loan.CompleteDisbursement(admin, disbursedAt).IsSuccess);
+        Assert.True(loan.CompleteDisbursement(admin, disbursedAt, Funded).IsSuccess);
 
         Assert.Equal(LoanStatus.Active, loan.Status);
         Assert.Equal(admin, loan.DisbursedById);
@@ -91,7 +94,7 @@ public class LoanLifecycleTests
     {
         var loan = NewLoan();
         loan.ApproveLoan();
-        loan.CompleteDisbursement(Guid.NewGuid(), Start);
+        loan.CompleteDisbursement(Guid.NewGuid(), Start, Funded);
 
         var result = loan.Cancel();
 
@@ -145,7 +148,7 @@ public class LoanLifecycleTests
     {
         var loan = NewLoan();
         loan.ApproveLoan();
-        loan.CompleteDisbursement(Guid.NewGuid(), Start);
+        loan.CompleteDisbursement(Guid.NewGuid(), Start, Funded);
 
         var result = loan.Revise(50_000m, 12m, null, null);
 
@@ -155,11 +158,36 @@ public class LoanLifecycleTests
     }
 
     [Fact]
+    public void DisbursementIsRefusedWhenTheGroupCannotCoverIt()
+    {
+        var loan = NewLoan();
+        loan.ApproveLoan();
+
+        // Approved when the group had the money, paid out when it no longer does.
+        var result = loan.CompleteDisbursement(Guid.NewGuid(), Start, new CashInHand(99_999m));
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Ledger.InsufficientCash", result.Error.Code);
+        Assert.Equal(LoanStatus.Approved, loan.Status);
+        Assert.Null(loan.DisbursedAt);
+    }
+
+    [Fact]
+    public void DisbursementIsAllowedWhenTheBalanceExactlyCoversIt()
+    {
+        var loan = NewLoan();
+        loan.ApproveLoan();
+
+        Assert.True(loan.CompleteDisbursement(Guid.NewGuid(), Start, new CashInHand(100_000m)).IsSuccess);
+        Assert.Equal(LoanStatus.Active, loan.Status);
+    }
+
+    [Fact]
     public void CancellingIsRefusedOnceTheMoneyHasLeft()
     {
         var loan = NewLoan();
         loan.ApproveLoan();
-        loan.CompleteDisbursement(Guid.NewGuid(), Start);
+        loan.CompleteDisbursement(Guid.NewGuid(), Start, Funded);
 
         Assert.True(loan.Cancel().IsFailure);
     }

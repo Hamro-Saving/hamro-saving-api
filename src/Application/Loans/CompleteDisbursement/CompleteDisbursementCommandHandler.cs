@@ -28,7 +28,9 @@ internal sealed class CompleteDisbursementCommandHandler(
         if (!userContext.CanWrite(loan.GroupId))
             return Result.Failure(LoanErrors.NotInGroup);
 
-        var result = loan.CompleteDisbursement(userContext.UserId, DateTime.UtcNow);
+        var inHand = await CashPosition.InHandAsync(dbContext, loan.GroupId, cancellationToken);
+
+        var result = loan.CompleteDisbursement(userContext.UserId, DateTime.UtcNow, inHand);
         if (result.IsFailure) return result;
 
         dbContext.PostLoanDisbursement(loan.GroupId, loan.Id, loan.BorrowerId, loan.Amount,

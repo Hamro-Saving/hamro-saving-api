@@ -1,3 +1,4 @@
+using HamroSavings.Domain.Ledger;
 using HamroSavings.Domain.Loans;
 
 namespace UnitTests.Loans;
@@ -8,6 +9,8 @@ namespace UnitTests.Loans;
 /// </summary>
 public class LoanLedgerTests
 {
+    private static readonly CashInHand Funded = new(10_000_000m);
+
     private static readonly DateTime Disbursed = new(2026, 6, 1, 0, 0, 0, DateTimeKind.Utc);
 
     /// <summary>A live loan of 100,000 at 18% a year — 49.315068 a day — disbursed 2026-06-01.</summary>
@@ -15,7 +18,7 @@ public class LoanLedgerTests
     {
         var loan = Loan.Create(Guid.NewGuid(), "Member", Guid.NewGuid(), amount, rate, Disbursed, null, null);
         loan.ApproveLoan();
-        loan.CompleteDisbursement(Guid.NewGuid(), Disbursed);
+        loan.CompleteDisbursement(Guid.NewGuid(), Disbursed, Funded);
         return loan;
     }
 

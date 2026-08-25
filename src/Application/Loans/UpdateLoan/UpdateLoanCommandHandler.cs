@@ -1,5 +1,6 @@
 using HamroSavings.Application.Abstractions.Authentication;
 using HamroSavings.Application.Abstractions.Data;
+using HamroSavings.Application.Ledger;
 using HamroSavings.Application.Abstractions.Messaging;
 using HamroSavings.Domain.Groups;
 using HamroSavings.Domain.Loans;
@@ -42,6 +43,10 @@ internal sealed class UpdateLoanCommandHandler(
                 ? (group?.MemberInterestRate ?? loan.InterestRate)
                 : (group?.NonMemberInterestRate ?? loan.InterestRate);
         }
+
+        var inHand = await CashPosition.InHandAsync(dbContext, loan.GroupId, cancellationToken);
+        var covered = inHand.EnsureCovers(command.Amount);
+        if (covered.IsFailure) return covered;
 
         var result = loan.Revise(command.Amount, interestRate, command.DueDate, command.Notes);
         if (result.IsFailure)

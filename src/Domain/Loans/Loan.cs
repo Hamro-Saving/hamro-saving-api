@@ -1,3 +1,4 @@
+using HamroSavings.Domain.Ledger;
 using HamroSavings.SharedKernel;
 
 namespace HamroSavings.Domain.Loans;
@@ -117,9 +118,14 @@ public sealed class Loan : Entity
     }
 
     /// <summary>Money is with the borrower — the loan starts running and interest starts here.</summary>
-    public Result CompleteDisbursement(Guid disbursedById, DateTime disbursedAt)
+    public Result CompleteDisbursement(Guid disbursedById, DateTime disbursedAt, CashInHand available)
     {
         if (Status != LoanStatus.Approved) return Result.Failure(LoanErrors.NotApproved);
+
+        // This is the moment the money actually leaves, so it is the moment that matters:
+        // the group may have had it when the loan was approved and not when it is paid out.
+        var covered = available.EnsureCovers(Amount);
+        if (covered.IsFailure) return covered;
 
         Status = LoanStatus.Active;
         DisbursedById = disbursedById;

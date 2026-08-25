@@ -28,6 +28,12 @@ public static class LoanErrors
     public static readonly Error PaymentAlreadyVerified =
         Error.Conflict("LoanPayment.AlreadyVerified", "This payment has already been verified.");
 
+    public static readonly Error CannotDeleteUnlessCancelled =
+        Error.Conflict("Loan.CannotDeleteUnlessCancelled", "Only a cancelled loan can be deleted.");
+
+    public static readonly Error InLedger =
+        Error.Conflict("Loan.InLedger", "This record has entries in the group's books and cannot be deleted.");
+
     public static readonly Error CannotModifyAfterDisbursement =
         Error.Problem("Loan.CannotModifyAfterDisbursement", "A loan can only be changed before the money leaves the group.");
 

@@ -42,6 +42,10 @@ internal static class LedgerPosting
     public static void PostFixedDepositInterest(this IApplicationDbContext db, Guid groupId, Guid fixedDepositId, decimal amount, DateTime occurredAt, string description)
         => db.Add(groupId, occurredAt, TransactionType.FixedDepositInterest, LedgerAccount.Cash, LedgerAccount.InterestIncome, amount, description, "FixedDeposit", fixedDepositId, null);
 
+    /// <summary>A late joiner catching up. Income to the group, not savings owed back.</summary>
+    public static void PostLateJoinerInterest(this IApplicationDbContext db, Guid groupId, Guid recordId, Guid memberId, decimal amount, DateTime occurredAt, string description)
+        => db.Add(groupId, occurredAt, TransactionType.LateJoinerInterest, LedgerAccount.Cash, LedgerAccount.InterestIncome, amount, description, "LateJoinerInterest", recordId, memberId);
+
     /// <summary>Money spent and gone.</summary>
     public static void PostExpense(this IApplicationDbContext db, Guid groupId, Guid expenseId, decimal amount, DateTime occurredAt, string description)
         => db.Add(groupId, occurredAt, TransactionType.Expense, LedgerAccount.Expenses, LedgerAccount.Cash, amount, description, "Expense", expenseId, null);

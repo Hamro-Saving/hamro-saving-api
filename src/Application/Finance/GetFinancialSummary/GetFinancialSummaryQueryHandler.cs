@@ -62,7 +62,14 @@ internal sealed class GetFinancialSummaryQueryHandler(
             .Where(fd => fd.Status == FixedDepositStatus.Withdrawn)
             .SumAsync(fd => fd.InterestEarned, cancellationToken) ?? 0;
 
-        var totalInterestCollected = loanInterestCollected + fixedDepositInterest;
+        var lateJoinerQuery = dbContext.LateJoinerInterests.AsQueryable();
+        if (groupId.HasValue)
+            lateJoinerQuery = lateJoinerQuery.Where(r => r.GroupId == groupId.Value);
+
+        var lateJoinerInterest = await lateJoinerQuery
+            .SumAsync(r => (decimal?)r.Amount, cancellationToken) ?? 0;
+
+        var totalInterestCollected = loanInterestCollected + fixedDepositInterest + lateJoinerInterest;
 
         var totalExpenses = await expensesQuery
             .SumAsync(e => (decimal?)e.Amount, cancellationToken) ?? 0;

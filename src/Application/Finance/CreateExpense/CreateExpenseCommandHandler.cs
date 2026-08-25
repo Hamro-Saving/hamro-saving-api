@@ -31,6 +31,13 @@ internal sealed class CreateExpenseCommandHandler(
             return Result.Failure<Guid>(GroupErrors.NotFound(groupId));
         }
 
+
+        // The rule about what the group may commit lives on CashInHand; the balance is
+        // read from the books here.
+        var inHand = await CashPosition.InHandAsync(dbContext, groupId, cancellationToken);
+        var covered = inHand.EnsureCovers(command.Amount);
+        if (covered.IsFailure) return Result.Failure<Guid>(covered.Error);
+
         var expense = Expense.Create(
             groupId,
             command.Amount,

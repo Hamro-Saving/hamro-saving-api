@@ -21,6 +21,7 @@ public interface IApplicationDbContext
     DbSet<LoanApproval> LoanApprovals { get; }
     DbSet<Expense> Expenses { get; }
     DbSet<FixedDeposit> FixedDeposits { get; }
+    DbSet<LateJoinerInterest> LateJoinerInterests { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

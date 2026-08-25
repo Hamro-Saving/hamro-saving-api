@@ -24,6 +24,7 @@ public sealed class HamroSavingsDbContext(DbContextOptions<HamroSavingsDbContext
     public DbSet<LoanApproval> LoanApprovals { get; init; }
     public DbSet<Expense> Expenses { get; init; }
     public DbSet<FixedDeposit> FixedDeposits { get; init; }
+    public DbSet<LateJoinerInterest> LateJoinerInterests { get; init; }
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {
