@@ -183,15 +183,35 @@ public class LoanLedgerTests
     }
 
     [Fact]
-    public void Payment_IsRejected_WhenInterestExceedsWhatHasAccrued()
+    public void Payment_RecordsMoreInterestThanHasAccrued()
     {
         var loan = LiveLoan();
 
+        // 1,479.45 has accrued by day 30; the borrower hands over a round 5,000.
         var result = loan.RecordPayment(Disbursed.AddDays(30), 0m, interestAmount: 5_000m);
 
-        Assert.True(result.IsFailure);
-        Assert.Equal("Loan.InterestExceedsAccrued", result.Error.Code);
+        Assert.True(result.IsSuccess);
+        Assert.Equal(5_000m, result.Value.InterestPaid);
+        Assert.Equal(5_000m, loan.TotalInterestPaid);
+        // What was owed is settled, and the surplus does not become a credit against
+        // interest the loan has not earned yet.
+        Assert.Equal(0m, loan.UnpaidInterest);
+        Assert.Equal(1_479.45m, loan.TotalInterestAccrued);
         Assert.Equal(100_000m, loan.OutstandingPrincipal);
+    }
+
+    [Fact]
+    public void PayingAheadOnInterest_DoesNotSuppressLaterAccrual()
+    {
+        var loan = LiveLoan();
+        var paidOn = Disbursed.AddDays(30);
+        loan.RecordPayment(paidOn, 0m, interestAmount: 5_000m);
+
+        // The next stretch runs from the payment date at the ordinary rate — the overpayment
+        // bought nothing forward.
+        var accrued = loan.InterestAccruedAsOf(paidOn.AddDays(30));
+
+        Assert.Equal(1_479.45m, accrued);
     }
 
     [Fact]
@@ -229,16 +249,59 @@ public class LoanLedgerTests
     }
 
     [Fact]
-    public void RoundingSlack_IsAbsorbedRatherThanRejected()
+    public void ARemainderUnderARupee_SettlesTheLoan()
     {
         var loan = LiveLoan();
         var paidOn = Disbursed.AddDays(30);
 
-        // A cent over what accrued: taken as "clear it", not refused
+        // Leaves 0.55 of principal outstanding and clears the interest.
+        var result = loan.RecordPayment(paidOn, principalAmount: 99_999.45m, interestAmount: 1_479.45m);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(LoanStatus.PaidOff, loan.Status);
+        Assert.Equal(0m, loan.OutstandingPrincipal);
+        Assert.Equal(0m, loan.UnpaidInterest);
+    }
+
+    [Fact]
+    public void ARemainderOfARupeeOrMore_KeepsTheLoanRunning()
+    {
+        var loan = LiveLoan();
+        var paidOn = Disbursed.AddDays(30);
+
+        var result = loan.RecordPayment(paidOn, principalAmount: 99_999m, interestAmount: 1_479.45m);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(LoanStatus.Active, loan.Status);
+        Assert.Equal(1m, loan.OutstandingPrincipal);
+    }
+
+    [Fact]
+    public void SmallResiduesAreJudgedTogetherNotSeparately()
+    {
+        var loan = LiveLoan();
+        var paidOn = Disbursed.AddDays(30);
+
+        // 0.60 of principal and 0.55 of interest are each under a rupee, but 1.15 together
+        // is a real balance, so the loan stays open.
+        var result = loan.RecordPayment(paidOn, principalAmount: 99_999.40m, interestAmount: 1_478.90m);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(LoanStatus.Active, loan.Status);
+        Assert.Equal(0.60m, loan.OutstandingPrincipal);
+        Assert.Equal(0.55m, loan.UnpaidInterest);
+    }
+
+    [Fact]
+    public void ACentOverWhatAccrued_ClearsTheInterestAndIsRecordedAsPaid()
+    {
+        var loan = LiveLoan();
+        var paidOn = Disbursed.AddDays(30);
+
         var result = loan.RecordPayment(paidOn, 0m, interestAmount: 1_479.46m);
 
         Assert.True(result.IsSuccess);
-        Assert.Equal(1_479.45m, result.Value.InterestPaid);
+        Assert.Equal(1_479.46m, result.Value.InterestPaid);
         Assert.Equal(0m, loan.UnpaidInterest);
     }
 

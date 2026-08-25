@@ -32,14 +32,17 @@ public static class FixedDepositErrors
         Error.Problem("FixedDeposit.WithdrawnBeforeStart", "A withdrawal cannot be dated before the deposit started.");
 }
 
-public static class LateJoinerInterestErrors
+public static class OtherIncomingFundErrors
 {
     public static Error NotFound(Guid id) =>
-        Error.NotFound("LateJoinerInterest.NotFound", $"Late joiner interest with ID {id} was not found.");
+        Error.NotFound("OtherIncomingFund.NotFound", $"Incoming funds record with ID {id} was not found.");
 
     public static readonly Error NotInGroup =
-        Error.Forbidden("LateJoinerInterest.NotInGroup", "This record does not belong to this group.");
+        Error.Forbidden("OtherIncomingFund.NotInGroup", "This record does not belong to this group.");
 
     public static readonly Error AmountNotPositive =
-        Error.Validation("LateJoinerInterest.AmountNotPositive", "The interest paid must be more than zero.");
+        Error.Validation("OtherIncomingFund.AmountNotPositive", "The amount received must be more than zero.");
+
+    public static readonly Error RemarksRequired =
+        Error.Validation("OtherIncomingFund.RemarksRequired", "Remarks are required — they are what says which kind of income this was.");
 }

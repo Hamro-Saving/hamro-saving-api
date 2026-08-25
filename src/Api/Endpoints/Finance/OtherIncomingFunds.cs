@@ -3,26 +3,26 @@ using HamroSavings.Api.Extensions;
 using HamroSavings.Api.Infrastructure;
 using HamroSavings.Application.Abstractions.Authentication;
 using HamroSavings.Application.Abstractions.Messaging;
-using HamroSavings.Application.Finance.GetLateJoinerInterest;
-using HamroSavings.Application.Finance.RecordLateJoinerInterest;
+using HamroSavings.Application.Finance.GetOtherIncomingFunds;
+using HamroSavings.Application.Finance.RecordOtherIncomingFund;
 
 namespace HamroSavings.Api.Endpoints.Finance;
 
-public sealed class RecordLateJoinerInterest : IEndpoint
+public sealed class RecordOtherIncomingFund : IEndpoint
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapPost("late-joiner-interest", async (
-            RecordLateJoinerInterestRequest request,
-            ICommandHandler<RecordLateJoinerInterestCommand, Guid> handler,
+        app.MapPost("other-incoming-funds", async (
+            RecordOtherIncomingFundRequest request,
+            ICommandHandler<RecordOtherIncomingFundCommand, Guid> handler,
             CancellationToken ct) =>
         {
-            var command = new RecordLateJoinerInterestCommand(
-                request.MemberId, request.Amount, request.PaidDate, request.Notes, request.GroupId);
+            var command = new RecordOtherIncomingFundCommand(
+                request.MemberId, request.Amount, request.PaidDate, request.Remarks, request.GroupId);
 
             var result = await handler.Handle(command, ct);
             return result.Match(
-                id => Results.Created($"/api/v1/late-joiner-interest/{id}", new { Id = id }),
+                id => Results.Created($"/api/v1/other-incoming-funds/{id}", new { Id = id }),
                 error => CustomResults.Problem(error));
         })
         .WithTags("Finance")
@@ -31,16 +31,16 @@ public sealed class RecordLateJoinerInterest : IEndpoint
     }
 }
 
-public sealed class GetLateJoinerInterest : IEndpoint
+public sealed class GetOtherIncomingFunds : IEndpoint
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapGet("late-joiner-interest", async (
+        app.MapGet("other-incoming-funds", async (
             Guid? groupId,
-            IQueryHandler<GetLateJoinerInterestQuery, List<LateJoinerInterestResponse>> handler,
+            IQueryHandler<GetOtherIncomingFundsQuery, List<OtherIncomingFundResponse>> handler,
             CancellationToken ct) =>
         {
-            var result = await handler.Handle(new GetLateJoinerInterestQuery(groupId), ct);
+            var result = await handler.Handle(new GetOtherIncomingFundsQuery(groupId), ct);
             return result.Match(
                 rows => Results.Ok(rows),
                 error => CustomResults.Problem(error));
@@ -51,9 +51,9 @@ public sealed class GetLateJoinerInterest : IEndpoint
     }
 }
 
-public sealed record RecordLateJoinerInterestRequest(
+public sealed record RecordOtherIncomingFundRequest(
     Guid MemberId,
     decimal Amount,
     DateTime PaidDate,
-    string? Notes,
+    string Remarks,
     Guid? GroupId);

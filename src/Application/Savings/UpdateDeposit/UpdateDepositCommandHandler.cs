@@ -28,7 +28,7 @@ internal sealed class UpdateDepositCommandHandler(
         if (!userContext.IsGroupAdmin && deposit.MemberId != userContext.ActiveMemberId)
             return Result.Failure(UserErrors.Unauthorized);
 
-        var result = deposit.Update(command.Amount, command.Notes);
+        var result = deposit.Update(command.Amount, command.Notes, command.DepositDate);
         if (result.IsFailure)
             return result;
 

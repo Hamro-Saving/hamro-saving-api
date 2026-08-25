@@ -1,10 +1,10 @@
 using FluentValidation;
 
-namespace HamroSavings.Application.Finance.RecordLateJoinerInterest;
+namespace HamroSavings.Application.Finance.RecordOtherIncomingFund;
 
-public sealed class RecordLateJoinerInterestCommandValidator : AbstractValidator<RecordLateJoinerInterestCommand>
+public sealed class RecordOtherIncomingFundCommandValidator : AbstractValidator<RecordOtherIncomingFundCommand>
 {
-    public RecordLateJoinerInterestCommandValidator()
+    public RecordOtherIncomingFundCommandValidator()
     {
         RuleFor(x => x.MemberId).NotEmpty().WithMessage("Choose the member who paid.");
 
@@ -15,6 +15,8 @@ public sealed class RecordLateJoinerInterestCommandValidator : AbstractValidator
             .LessThanOrEqualTo(_ => DateTime.UtcNow.AddDays(1))
             .WithMessage("Paid date cannot be in the future.");
 
-        RuleFor(x => x.Notes).MaximumLength(500);
+        RuleFor(x => x.Remarks)
+            .NotEmpty().WithMessage("Remarks are required — say what this money was for.")
+            .MaximumLength(500);
     }
 }

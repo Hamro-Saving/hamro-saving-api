@@ -42,10 +42,18 @@ builder.Services.AddCors(options =>
     {
         if (builder.Environment.IsDevelopment())
         {
-            policy.SetIsOriginAllowed(origin => new Uri(origin).Host == "localhost")
-                  .AllowAnyHeader()
-                  .AllowAnyMethod()
-                  .AllowCredentials();
+            // Allows BOTH localhost and any incoming ngrok tunnel URL
+            policy.SetIsOriginAllowed(origin =>
+            {
+                var host = new Uri(origin).Host;
+                return host == "localhost"
+                       || host.EndsWith(".ngrok-free.app")
+                       || host.EndsWith(".ngrok-free.dev")
+                       || host.EndsWith(".ngrok.io");
+            })
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials();
         }
         else
         {

@@ -16,7 +16,7 @@ public sealed class UpdateDeposit : IEndpoint
             ICommandHandler<UpdateDepositCommand> handler,
             CancellationToken ct) =>
         {
-            var result = await handler.Handle(new UpdateDepositCommand(id, request.Amount, request.Notes), ct);
+            var result = await handler.Handle(new UpdateDepositCommand(id, request.Amount, request.Notes, request.DepositDate), ct);
             return result.Match(
                 () => Results.NoContent(),
                 error => CustomResults.Problem(error));
@@ -27,4 +27,4 @@ public sealed class UpdateDeposit : IEndpoint
     }
 }
 
-public sealed record UpdateDepositRequest(decimal Amount, string? Notes);
+public sealed record UpdateDepositRequest(decimal Amount, string? Notes, DateOnly DepositDate);

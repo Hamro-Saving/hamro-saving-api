@@ -13,5 +13,5 @@ public enum TransactionType
     Expense = 7,
 
     /// <summary>Interest a late-joining member paid to catch up with the group.</summary>
-    LateJoinerInterest = 8,
+    OtherIncome = 8,
 }

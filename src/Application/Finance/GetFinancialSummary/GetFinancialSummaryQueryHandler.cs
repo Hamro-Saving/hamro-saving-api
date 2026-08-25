@@ -2,7 +2,6 @@ using HamroSavings.Application.Abstractions.Authentication;
 using HamroSavings.Application.Abstractions.Data;
 using HamroSavings.Application.Abstractions.Messaging;
 using HamroSavings.Domain.Finance;
-using HamroSavings.Domain.Loans;
 using HamroSavings.Domain.Savings;
 using HamroSavings.SharedKernel;
 using Microsoft.EntityFrameworkCore;
@@ -39,18 +38,30 @@ internal sealed class GetFinancialSummaryQueryHandler(
             .Where(d => d.IsVerified)
             .SumAsync(d => (decimal?)d.Amount, cancellationToken) ?? 0;
 
-        var activeLoans = await loansQuery
-            .Where(l => l.Status == LoanStatus.Active || l.Status == LoanStatus.Overdue)
-            .ToListAsync(cancellationToken);
-
-        // Money actually still out with borrowers, not what was originally lent
-        var totalOnLoan = activeLoans.Sum(l => l.OutstandingPrincipal);
-
         if (groupId.HasValue)
         {
             var loanIds = await loansQuery.Select(l => l.Id).ToListAsync(cancellationToken);
             paymentsQuery = paymentsQuery.Where(p => loanIds.Contains(p.LoanId));
         }
+
+        // Everything that has left the group for a borrower. A loan that was cancelled or
+        // declined never went out, so only a disbursed one counts.
+        var principalDisbursed = await loansQuery
+            .Where(l => l.DisbursedAt != null)
+            .SumAsync(l => (decimal?)l.Amount, cancellationToken) ?? 0;
+
+        var principalRepaid = await paymentsQuery
+            .Where(p => p.IsVerified)
+            .SumAsync(p => (decimal?)p.PrincipalAmount, cancellationToken) ?? 0;
+
+        // Money still out with borrowers. Deliberately not the loans' OutstandingPrincipal:
+        // that falls the moment a repayment is keyed in, while the ledger only credits the
+        // receivable once the payment is verified. Reading it here made the two disagree by
+        // the value of every unverified repayment — and a repayment that settles a loan made
+        // the whole of its principal vanish from this figure while still sitting in the
+        // ledger as money out. Counting what was disbursed less what has been verified back
+        // is the same question the ledger answers, so the two cannot drift.
+        var totalOnLoan = principalDisbursed - principalRepaid;
 
         var loanInterestCollected = await paymentsQuery
             .Where(p => p.IsVerified)
@@ -62,7 +73,7 @@ internal sealed class GetFinancialSummaryQueryHandler(
             .Where(fd => fd.Status == FixedDepositStatus.Withdrawn)
             .SumAsync(fd => fd.InterestEarned, cancellationToken) ?? 0;
 
-        var lateJoinerQuery = dbContext.LateJoinerInterests.AsQueryable();
+        var lateJoinerQuery = dbContext.OtherIncomingFunds.AsQueryable();
         if (groupId.HasValue)
             lateJoinerQuery = lateJoinerQuery.Where(r => r.GroupId == groupId.Value);
 

@@ -77,6 +77,36 @@ public class LoanLifecycleTests
         Assert.Equal(0m, loan.InterestAccruedAsOf(disbursedAt));
     }
 
+    [Fact]
+    public void ALoanTheGroupMadeEarlierCanBeEnteredWithItsRealPayoutDate()
+    {
+        var loan = NewLoan();
+        loan.ApproveLoan();
+        var handedOverOn = Start.AddDays(-1_000);
+
+        Assert.True(loan.CompleteDisbursement(Guid.NewGuid(), handedOverOn, Funded).IsSuccess);
+
+        // The interest clock starts when the borrower got the money, so a loan brought into
+        // the system years later arrives carrying every day of interest it has already run.
+        Assert.Equal(handedOverOn, loan.LastAccrualDate);
+        Assert.Equal(1_000, loan.AccrualDays(Start));
+        Assert.True(loan.InterestAccruedAsOf(Start) > 0);
+    }
+
+    [Fact]
+    public void APayoutCannotBeDatedIntoTheFuture()
+    {
+        var loan = NewLoan();
+        loan.ApproveLoan();
+
+        var result = loan.CompleteDisbursement(Guid.NewGuid(), DateTime.UtcNow.AddDays(1), Funded);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(LoanErrors.DisbursementInFuture, result.Error);
+        Assert.Equal(LoanStatus.Approved, loan.Status);
+        Assert.Null(loan.LastAccrualDate);
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]

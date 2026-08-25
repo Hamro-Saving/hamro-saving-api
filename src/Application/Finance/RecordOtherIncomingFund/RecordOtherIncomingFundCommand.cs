@@ -1,10 +1,10 @@
 using HamroSavings.Application.Abstractions.Messaging;
 
-namespace HamroSavings.Application.Finance.RecordLateJoinerInterest;
+namespace HamroSavings.Application.Finance.RecordOtherIncomingFund;
 
-public sealed record RecordLateJoinerInterestCommand(
+public sealed record RecordOtherIncomingFundCommand(
     Guid MemberId,
     decimal Amount,
     DateTime PaidDate,
-    string? Notes,
+    string Remarks,
     Guid? GroupId = null) : ICommand<Guid>;

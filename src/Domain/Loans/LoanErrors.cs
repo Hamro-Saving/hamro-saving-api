@@ -19,9 +19,6 @@ public static class LoanErrors
     public static readonly Error PaymentInFuture =
         Error.Problem("Loan.PaymentInFuture", "A payment cannot be dated in the future.");
 
-    public static readonly Error InterestExceedsAccrued =
-        Error.Problem("Loan.InterestExceedsAccrued", "The interest paid is more than the interest accrued on this loan by that date.");
-
     public static readonly Error PrincipalExceedsOutstanding =
         Error.Problem("Loan.PrincipalExceedsOutstanding", "The principal paid is more than the principal still outstanding.");
 
@@ -45,6 +42,15 @@ public static class LoanErrors
 
     public static readonly Error NotApproved =
         Error.Problem("Loan.NotApproved", "Loan must be approved by the members before it can be disbursed.");
+
+    public static readonly Error DisbursementInFuture =
+        Error.Validation("Loan.DisbursementInFuture", "A loan cannot be disbursed on a future date.");
+
+    public static readonly Error GroupRefusedLoan =
+        Error.Conflict("Loan.GroupRefusedLoan", "The members have declined this loan, so it cannot be force disbursed.");
+
+    public static readonly Error CannotForceDisburse =
+        Error.Conflict("Loan.CannotForceDisburse", "Only a loan still awaiting disbursement can be force disbursed.");
 
     public static readonly Error CannotCancelAfterDisbursement =
         Error.Problem("Loan.CannotCancelAfterDisbursement", "A loan can only be cancelled before its disbursement starts.");

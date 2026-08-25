@@ -130,6 +130,7 @@ internal sealed class GetLoansQueryHandler(
                 l.Status,
                 l.Notes,
                 l.DisbursedById,
+                l.IsForceDisbursed,
                 approvers.Count,
                 decliners.Count,
                 requiredApprovals,

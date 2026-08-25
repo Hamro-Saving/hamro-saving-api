@@ -4,27 +4,27 @@ using HamroSavings.Application.Abstractions.Messaging;
 using HamroSavings.SharedKernel;
 using Microsoft.EntityFrameworkCore;
 
-namespace HamroSavings.Application.Finance.GetLateJoinerInterest;
+namespace HamroSavings.Application.Finance.GetOtherIncomingFunds;
 
-internal sealed class GetLateJoinerInterestQueryHandler(
+internal sealed class GetOtherIncomingFundsQueryHandler(
     IApplicationDbContext dbContext,
     IUserContext userContext)
-    : IQueryHandler<GetLateJoinerInterestQuery, List<LateJoinerInterestResponse>>
+    : IQueryHandler<GetOtherIncomingFundsQuery, List<OtherIncomingFundResponse>>
 {
-    public async Task<Result<List<LateJoinerInterestResponse>>> Handle(GetLateJoinerInterestQuery query, CancellationToken cancellationToken = default)
+    public async Task<Result<List<OtherIncomingFundResponse>>> Handle(GetOtherIncomingFundsQuery query, CancellationToken cancellationToken = default)
     {
         var groupResult = userContext.ResolveReadGroupId(query.GroupId);
-        if (groupResult.IsFailure) return Result.Failure<List<LateJoinerInterestResponse>>(groupResult.Error);
+        if (groupResult.IsFailure) return Result.Failure<List<OtherIncomingFundResponse>>(groupResult.Error);
         var groupId = groupResult.Value;
 
-        var records = dbContext.LateJoinerInterests.AsQueryable();
+        var records = dbContext.OtherIncomingFunds.AsQueryable();
 
         if (groupId.HasValue)
             records = records.Where(r => r.GroupId == groupId.Value);
 
         var rows = await records
             .OrderByDescending(r => r.PaidDate)
-            .Select(r => new LateJoinerInterestResponse(
+            .Select(r => new OtherIncomingFundResponse(
                 r.Id,
                 r.MemberId,
                 dbContext.Members
@@ -33,7 +33,7 @@ internal sealed class GetLateJoinerInterestQueryHandler(
                     .FirstOrDefault() ?? "Unknown",
                 r.Amount,
                 r.PaidDate,
-                r.Notes,
+                r.Remarks,
                 r.CreatedAt))
             .ToListAsync(cancellationToken);
 

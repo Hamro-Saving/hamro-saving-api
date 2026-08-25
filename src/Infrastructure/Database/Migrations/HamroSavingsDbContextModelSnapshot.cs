@@ -145,7 +145,7 @@ namespace HamroSavings.Infrastructure.Database.Migrations
                     b.ToTable("fixed_deposits", "public");
                 });
 
-            modelBuilder.Entity("HamroSavings.Domain.Finance.LateJoinerInterest", b =>
+            modelBuilder.Entity("HamroSavings.Domain.Finance.OtherIncomingFund", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -169,11 +169,6 @@ namespace HamroSavings.Infrastructure.Database.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("member_id");
 
-                    b.Property<string>("Notes")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)")
-                        .HasColumnName("notes");
-
                     b.Property<DateTime>("PaidDate")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("paid_date");
@@ -182,16 +177,22 @@ namespace HamroSavings.Infrastructure.Database.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("recorded_by_id");
 
+                    b.Property<string>("Remarks")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("remarks");
+
                     b.HasKey("Id")
-                        .HasName("pk_late_joiner_interests");
+                        .HasName("pk_other_incoming_funds");
 
                     b.HasIndex("MemberId")
-                        .HasDatabaseName("ix_late_joiner_interests_member_id");
+                        .HasDatabaseName("ix_other_incoming_funds_member_id");
 
                     b.HasIndex("GroupId", "PaidDate")
-                        .HasDatabaseName("ix_late_joiner_interests_group_id_paid_date");
+                        .HasDatabaseName("ix_other_incoming_funds_group_id_paid_date");
 
-                    b.ToTable("late_joiner_interests", "public");
+                    b.ToTable("other_incoming_funds", "public");
                 });
 
             modelBuilder.Entity("HamroSavings.Domain.Groups.Group", b =>
@@ -388,6 +389,10 @@ namespace HamroSavings.Infrastructure.Database.Migrations
                         .HasPrecision(5, 2)
                         .HasColumnType("numeric(5,2)")
                         .HasColumnName("interest_rate");
+
+                    b.Property<bool>("IsForceDisbursed")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_force_disbursed");
 
                     b.Property<DateTime?>("LastAccrualDate")
                         .HasColumnType("timestamp with time zone")

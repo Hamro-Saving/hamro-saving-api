@@ -61,11 +61,15 @@ public sealed class Deposit : Entity
         return Result.Success();
     }
 
-    public Result Update(decimal amount, string? notes)
+    public Result Update(decimal amount, string? notes, DateOnly depositDate)
     {
         if (IsVerified) return Result.Failure(DepositErrors.CannotModifyVerified);
+        if (depositDate > DateOnly.FromDateTime(DateTime.UtcNow))
+            return Result.Failure(DepositErrors.DepositDateInFuture);
+
         Amount = amount;
         Notes = notes;
+        DepositDate = depositDate;
         return Result.Success();
     }
 }

@@ -7,19 +7,19 @@ using HamroSavings.Domain.Members;
 using HamroSavings.SharedKernel;
 using Microsoft.EntityFrameworkCore;
 
-namespace HamroSavings.Application.Finance.RecordLateJoinerInterest;
+namespace HamroSavings.Application.Finance.RecordOtherIncomingFund;
 
 /// <summary>
 /// Records what a late-joining member paid to catch up with the group. Money coming in,
 /// so unlike an expense or a loan there is nothing to check it against — the group is
 /// receiving rather than committing.
 /// </summary>
-internal sealed class RecordLateJoinerInterestCommandHandler(
+internal sealed class RecordOtherIncomingFundCommandHandler(
     IApplicationDbContext dbContext,
     IUserContext userContext)
-    : ICommandHandler<RecordLateJoinerInterestCommand, Guid>
+    : ICommandHandler<RecordOtherIncomingFundCommand, Guid>
 {
-    public async Task<Result<Guid>> Handle(RecordLateJoinerInterestCommand command, CancellationToken cancellationToken = default)
+    public async Task<Result<Guid>> Handle(RecordOtherIncomingFundCommand command, CancellationToken cancellationToken = default)
     {
         var groupResult = userContext.ResolveWriteGroupId();
         if (groupResult.IsFailure) return Result.Failure<Guid>(groupResult.Error);
@@ -31,16 +31,16 @@ internal sealed class RecordLateJoinerInterestCommandHandler(
         if (member is null)
             return Result.Failure<Guid>(MemberErrors.NotFound(command.MemberId));
 
-        var recordResult = LateJoinerInterest.Record(
-            groupId, command.MemberId, command.Amount, command.PaidDate, command.Notes, userContext.UserId);
+        var recordResult = OtherIncomingFund.Record(
+            groupId, command.MemberId, command.Amount, command.PaidDate, command.Remarks, userContext.UserId);
 
         if (recordResult.IsFailure)
             return Result.Failure<Guid>(recordResult.Error);
 
         var record = recordResult.Value;
-        dbContext.LateJoinerInterests.Add(record);
+        dbContext.OtherIncomingFunds.Add(record);
 
-        dbContext.PostLateJoinerInterest(groupId, record.Id, record.MemberId, record.Amount,
+        dbContext.PostOtherIncome(groupId, record.Id, record.MemberId, record.Amount,
             record.PaidDate, $"Late joiner interest from {member.FullName}");
 
         await dbContext.SaveChangesAsync(cancellationToken);

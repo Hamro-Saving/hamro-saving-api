@@ -18,6 +18,7 @@ public class LoanResponseTests
             50_000m, 18m, 50_000m, 100m, 50_100m, 25m, 100m, 0m, 0m,
             DateTime.UtcNow, DateTime.UtcNow, DateTime.UtcNow, null,
             LoanStatus.Active, "notes", Guid.NewGuid(),
+            IsForceDisbursed: true,
             ApprovalCount: 3, DeclineCount: 1, RequiredApprovals: 4, RequiredDeclines: 3,
             HasCurrentUserApproved: true, HasCurrentUserDeclined: false,
             Approvers: [voter], Decliners: [voter],
@@ -51,6 +52,9 @@ public class LoanResponseTests
         Assert.Equal(0, stripped.DeclineCount);
         Assert.Equal(0, stripped.RequiredApprovals);
         Assert.Equal(0, stripped.RequiredDeclines);
+        // How the loan passed is the group's business too — a forced payout says the
+        // members were bypassed, which is a fact about the group, not about the borrower.
+        Assert.False(stripped.IsForceDisbursed);
         Assert.False(stripped.HasCurrentUserApproved);
         Assert.False(stripped.HasCurrentUserDeclined);
         Assert.Null(stripped.DisbursedById);

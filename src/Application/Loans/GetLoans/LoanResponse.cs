@@ -27,6 +27,7 @@ public sealed record LoanResponse(
     LoanStatus Status,
     string? Notes,
     Guid? DisbursedById,
+    bool IsForceDisbursed,
     int ApprovalCount,
     int DeclineCount,
     int RequiredApprovals,
@@ -46,6 +47,7 @@ public sealed record LoanResponse(
     public LoanResponse WithoutGroupInternals() => this with
     {
         DisbursedById = null,
+        IsForceDisbursed = false,
         ApprovalCount = 0,
         DeclineCount = 0,
         RequiredApprovals = 0,

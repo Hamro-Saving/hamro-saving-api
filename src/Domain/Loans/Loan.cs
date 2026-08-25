@@ -8,6 +8,13 @@ public sealed class Loan : Entity
     /// <summary>Rounding slack, in currency units, when comparing a submitted amount to a computed one.</summary>
     private const decimal Tolerance = 0.01m;
 
+    /// <summary>
+    /// What is left of a loan before it counts as settled. Chasing a borrower for the last few
+    /// paisa of a daily-interest remainder is not worth anyone's time, so anything under a
+    /// rupee closes the loan and is written off rather than carried.
+    /// </summary>
+    private const decimal SettlementThreshold = 1m;
+
     public Guid Id { get; private set; }
     public Guid BorrowerId { get; private set; }
     public string BorrowerType { get; private set; } = string.Empty;
@@ -19,6 +26,13 @@ public sealed class Loan : Entity
     public LoanStatus Status { get; private set; }
     public string? Notes { get; private set; }
     public Guid? DisbursedById { get; private set; }
+
+    /// <summary>
+    /// Whether an admin paid this out without the members' approval. A forced loan spends the
+    /// group's money on one person's say-so, so it stays marked as such for as long as it exists.
+    /// </summary>
+    public bool IsForceDisbursed { get; private set; }
+
     public DateTime CreatedAt { get; private set; }
 
     // --- Ledger. Interest runs daily on the outstanding principal at InterestRate per 365 days.
@@ -122,6 +136,12 @@ public sealed class Loan : Entity
     {
         if (Status != LoanStatus.Approved) return Result.Failure(LoanErrors.NotApproved);
 
+        // The payout can be backdated — a loan the group made before it kept records here is
+        // entered after the fact — but it cannot be dated forward: interest would run from a
+        // day the borrower had not been handed anything.
+        if (disbursedAt.Date > DateTime.UtcNow.Date)
+            return Result.Failure(LoanErrors.DisbursementInFuture);
+
         // This is the moment the money actually leaves, so it is the moment that matters:
         // the group may have had it when the loan was approved and not when it is paid out.
         var covered = available.EnsureCovers(Amount);
@@ -135,6 +155,31 @@ public sealed class Loan : Entity
         LastAccrualDate = disbursedAt;
         Raise(new LoanCreatedDomainEvent(Id, BorrowerId, GroupId));
         return Result.Success();
+    }
+
+    /// <summary>
+    /// Pays out a loan the members never settled, on an admin's authority. This exists because a
+    /// vote that nobody answers leaves a borrower waiting indefinitely; it is not a way past a
+    /// vote that was answered. A group that has refused the loan keeps its refusal, and the
+    /// cash rule binds an admin exactly as it binds anyone else.
+    /// </summary>
+    public Result ForceDisbursement(Guid disbursedById, DateTime disbursedAt, CashInHand available, LoanVoteTally votes)
+    {
+        if (Status is not (LoanStatus.Pending or LoanStatus.Approved))
+            return Result.Failure(LoanErrors.CannotForceDisburse);
+
+        if (votes.GroupHasRefused)
+            return Result.Failure(LoanErrors.GroupRefusedLoan);
+
+        if (disbursedAt.Date > DateTime.UtcNow.Date)
+            return Result.Failure(LoanErrors.DisbursementInFuture);
+
+        var covered = available.EnsureCovers(Amount);
+        if (covered.IsFailure) return covered;
+
+        IsForceDisbursed = Status == LoanStatus.Pending;
+        Status = LoanStatus.Approved;
+        return CompleteDisbursement(disbursedById, disbursedAt, available);
     }
 
     /// <summary>
@@ -153,24 +198,26 @@ public sealed class Loan : Entity
         var newlyAccrued = Round(DailyInterest * days);
         var interestOwed = UnpaidInterest + newlyAccrued;
 
-        if (interestAmount > interestOwed + Tolerance)
-            return Result.Failure<LoanPaymentAllocation>(LoanErrors.InterestExceedsAccrued);
-
         if (principalAmount > OutstandingPrincipal + Tolerance)
             return Result.Failure<LoanPaymentAllocation>(LoanErrors.PrincipalExceedsOutstanding);
 
-        // Within tolerance the submitted figures are treated as "pay it all off"
-        var interestPaid = Math.Min(interestAmount, interestOwed);
+        // Interest is recorded as handed over, even above what has accrued: a borrower settling
+        // on a round figure, or on the rate the group agreed by hand, is paying interest and the
+        // books should say so. Principal is different — there is a fixed debt to clear, and more
+        // than that is not a repayment at all.
+        var interestPaid = interestAmount;
         var principalPaid = Math.Min(principalAmount, OutstandingPrincipal);
 
         TotalInterestAccrued += newlyAccrued;
-        UnpaidInterest = interestOwed - interestPaid;
+        // Never below zero: paying ahead settles what is owed, it does not build a credit the
+        // loan would have to remember and net off against interest not yet earned.
+        UnpaidInterest = Math.Max(0, interestOwed - interestPaid);
         OutstandingPrincipal -= principalPaid;
         TotalInterestPaid += interestPaid;
         TotalPrincipalPaid += principalPaid;
         LastAccrualDate = paidDate;
 
-        if (OutstandingPrincipal <= Tolerance && UnpaidInterest <= Tolerance)
+        if (OutstandingPrincipal + UnpaidInterest < SettlementThreshold)
         {
             OutstandingPrincipal = 0;
             UnpaidInterest = 0;

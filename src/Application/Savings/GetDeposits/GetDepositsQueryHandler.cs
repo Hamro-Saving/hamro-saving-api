@@ -66,8 +66,9 @@ internal sealed class GetDepositsQueryHandler(
                     d.VerifiedAt,
                     d.CreatedAt
                 })
-            .OrderByDescending(d => d.DepositYear)
-            .ThenByDescending(d => d.DepositMonth)
+            // Newest first, by the day the money changed hands. Sorting by the BS period
+            // instead stranded every "Other" deposit, which has no period at all.
+            .OrderByDescending(d => d.DepositDate)
             .ThenBy(d => d.MemberName)
             .Select(d => new DepositResponse(
                 d.Id,

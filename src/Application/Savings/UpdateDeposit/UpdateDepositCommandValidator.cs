@@ -7,5 +7,6 @@ public sealed class UpdateDepositCommandValidator : AbstractValidator<UpdateDepo
     public UpdateDepositCommandValidator()
     {
         RuleFor(x => x.Amount).GreaterThan(0).WithMessage("Amount must be greater than zero.");
+        RuleFor(x => x.DepositDate).NotEmpty().WithMessage("Deposit date is required.");
     }
 }

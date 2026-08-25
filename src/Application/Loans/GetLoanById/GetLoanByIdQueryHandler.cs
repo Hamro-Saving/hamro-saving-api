@@ -99,6 +99,7 @@ internal sealed class GetLoanByIdQueryHandler(
             loan.Status,
             loan.Notes,
             loan.DisbursedById,
+            loan.IsForceDisbursed,
             approverList.Count,
             declinerList.Count,
             requiredApprovals,

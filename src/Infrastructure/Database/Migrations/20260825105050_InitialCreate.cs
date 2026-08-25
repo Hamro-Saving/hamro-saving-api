@@ -107,25 +107,6 @@ namespace HamroSavings.Infrastructure.Database.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "late_joiner_interests",
-                schema: "public",
-                columns: table => new
-                {
-                    id = table.Column<Guid>(type: "uuid", nullable: false),
-                    group_id = table.Column<Guid>(type: "uuid", nullable: false),
-                    member_id = table.Column<Guid>(type: "uuid", nullable: false),
-                    amount = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
-                    paid_date = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    notes = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
-                    recorded_by_id = table.Column<Guid>(type: "uuid", nullable: false),
-                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("pk_late_joiner_interests", x => x.id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "loan_approvals",
                 schema: "public",
                 columns: table => new
@@ -157,6 +138,7 @@ namespace HamroSavings.Infrastructure.Database.Migrations
                     status = table.Column<string>(type: "text", nullable: false),
                     notes = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
                     disbursed_by_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    is_force_disbursed = table.Column<bool>(type: "boolean", nullable: false),
                     created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     disbursed_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     outstanding_principal = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
@@ -169,6 +151,25 @@ namespace HamroSavings.Infrastructure.Database.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("pk_loans", x => x.id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "other_incoming_funds",
+                schema: "public",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    group_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    member_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    amount = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
+                    paid_date = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    remarks = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
+                    recorded_by_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_other_incoming_funds", x => x.id);
                 });
 
             migrationBuilder.CreateTable(
@@ -299,18 +300,6 @@ namespace HamroSavings.Infrastructure.Database.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "ix_late_joiner_interests_group_id_paid_date",
-                schema: "public",
-                table: "late_joiner_interests",
-                columns: new[] { "group_id", "paid_date" });
-
-            migrationBuilder.CreateIndex(
-                name: "ix_late_joiner_interests_member_id",
-                schema: "public",
-                table: "late_joiner_interests",
-                column: "member_id");
-
-            migrationBuilder.CreateIndex(
                 name: "ix_ledger_entries_group_id_occurred_at",
                 schema: "public",
                 table: "ledger_entries",
@@ -371,6 +360,18 @@ namespace HamroSavings.Infrastructure.Database.Migrations
                 filter: "user_id IS NOT NULL");
 
             migrationBuilder.CreateIndex(
+                name: "ix_other_incoming_funds_group_id_paid_date",
+                schema: "public",
+                table: "other_incoming_funds",
+                columns: new[] { "group_id", "paid_date" });
+
+            migrationBuilder.CreateIndex(
+                name: "ix_other_incoming_funds_member_id",
+                schema: "public",
+                table: "other_incoming_funds",
+                column: "member_id");
+
+            migrationBuilder.CreateIndex(
                 name: "ix_users_email",
                 schema: "public",
                 table: "users",
@@ -402,10 +403,6 @@ namespace HamroSavings.Infrastructure.Database.Migrations
                 schema: "public");
 
             migrationBuilder.DropTable(
-                name: "late_joiner_interests",
-                schema: "public");
-
-            migrationBuilder.DropTable(
                 name: "ledger_entries",
                 schema: "public");
 
@@ -419,6 +416,10 @@ namespace HamroSavings.Infrastructure.Database.Migrations
 
             migrationBuilder.DropTable(
                 name: "members",
+                schema: "public");
+
+            migrationBuilder.DropTable(
+                name: "other_incoming_funds",
                 schema: "public");
 
             migrationBuilder.DropTable(

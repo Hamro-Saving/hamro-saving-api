@@ -13,6 +13,9 @@ public static class DepositErrors
     public static readonly Error CannotModifyVerified =
         Error.Problem("Deposit.CannotModifyVerified", "Cannot modify a verified deposit.");
 
+    public static readonly Error DepositDateInFuture =
+        Error.Validation("Deposit.DepositDateInFuture", "The deposit date cannot be in the future.");
+
     public static readonly Error CannotDeleteVerified =
         Error.Conflict("Deposit.CannotDeleteVerified", "A verified deposit is in the group's books and cannot be deleted.");
 
