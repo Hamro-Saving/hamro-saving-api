@@ -18,7 +18,7 @@ public class LoanResponseTests
             50_000m, 18m, 50_000m, 100m, 50_100m, 25m, 100m, 0m, 0m,
             DateTime.UtcNow, DateTime.UtcNow, DateTime.UtcNow, null,
             LoanStatus.Active, "notes", Guid.NewGuid(),
-            ApprovalCount: 3, DeclineCount: 1, RequiredApprovals: 4,
+            ApprovalCount: 3, DeclineCount: 1, RequiredApprovals: 4, RequiredDeclines: 3,
             HasCurrentUserApproved: true, HasCurrentUserDeclined: false,
             Approvers: [voter], Decliners: [voter],
             CreatedAt: DateTime.UtcNow);
@@ -50,6 +50,7 @@ public class LoanResponseTests
         Assert.Equal(0, stripped.ApprovalCount);
         Assert.Equal(0, stripped.DeclineCount);
         Assert.Equal(0, stripped.RequiredApprovals);
+        Assert.Equal(0, stripped.RequiredDeclines);
         Assert.False(stripped.HasCurrentUserApproved);
         Assert.False(stripped.HasCurrentUserDeclined);
         Assert.Null(stripped.DisbursedById);

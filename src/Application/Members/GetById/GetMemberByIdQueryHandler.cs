@@ -34,6 +34,11 @@ internal sealed class GetMemberByIdQueryHandler(
                 m.GroupId,
                 m.IsActive,
                 dbContext.Users.Any(u => u.Id == m.UserId && u.IsActive),
+                dbContext.Deposits
+                    .Where(d => d.MemberId == m.Id && d.IsVerified)
+                    .Sum(d => (decimal?)d.Amount) ?? 0,
+                0m,
+                0m,
                 m.PhoneNumber,
                 m.Address,
                 m.CreatedAt))
@@ -42,6 +47,10 @@ internal sealed class GetMemberByIdQueryHandler(
         if (member is null)
             return Result.Failure<MemberResponse>(MemberErrors.NotFound(query.MemberId));
 
-        return Result.Success(member);
+        var owed = await Get.GetMembersQueryHandler.LoansOwedBy(dbContext, [member.Id], cancellationToken);
+
+        return Result.Success(owed.TryGetValue(member.Id, out var o)
+            ? member with { OutstandingPrincipal = o.Principal, OutstandingInterest = o.Interest }
+            : member);
     }
 }

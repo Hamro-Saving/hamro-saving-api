@@ -104,7 +104,9 @@ internal sealed class GetLoansQueryHandler(
                 .Select(v => new ApproverInfo(v.ApproverId, voterDict.GetValueOrDefault(v.ApproverId, "Unknown"), v.ApprovedAt))
                 .ToList();
 
-            var requiredApprovals = LoanVoting.VotesNeeded(voterCountByGroup.GetValueOrDefault(l.GroupId, 0));
+            var voterCount = voterCountByGroup.GetValueOrDefault(l.GroupId, 0);
+            var requiredApprovals = LoanVoting.ApprovalsNeeded(voterCount);
+            var requiredDeclines = LoanVoting.DeclinesNeeded(voterCount);
 
             return new LoanResponse(
                 l.Id,
@@ -131,6 +133,7 @@ internal sealed class GetLoansQueryHandler(
                 approvers.Count,
                 decliners.Count,
                 requiredApprovals,
+                requiredDeclines,
                 approvers.Any(a => a.ApproverId == userContext.UserId),
                 decliners.Any(a => a.ApproverId == userContext.UserId),
                 approvers,

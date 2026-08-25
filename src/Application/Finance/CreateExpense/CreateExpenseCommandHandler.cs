@@ -1,5 +1,6 @@
 using HamroSavings.Application.Abstractions.Authentication;
 using HamroSavings.Application.Abstractions.Data;
+using HamroSavings.Application.Ledger;
 using HamroSavings.Application.Abstractions.Messaging;
 using HamroSavings.Application.Finance.CreateExpense;
 using HamroSavings.Domain.Finance;
@@ -39,6 +40,8 @@ internal sealed class CreateExpenseCommandHandler(
             userContext.UserId);
 
         dbContext.Expenses.Add(expense);
+        dbContext.PostExpense(expense.GroupId, expense.Id, expense.Amount, expense.ExpenseDate,
+            $"{expense.Category}: {expense.Description}");
         await dbContext.SaveChangesAsync(cancellationToken);
 
         return Result.Success(expense.Id);

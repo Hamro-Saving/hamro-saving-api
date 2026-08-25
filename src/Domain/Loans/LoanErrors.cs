@@ -28,6 +28,9 @@ public static class LoanErrors
     public static readonly Error PaymentAlreadyVerified =
         Error.Conflict("LoanPayment.AlreadyVerified", "This payment has already been verified.");
 
+    public static readonly Error CannotModifyAfterDisbursement =
+        Error.Problem("Loan.CannotModifyAfterDisbursement", "A loan can only be changed before the money leaves the group.");
+
     public static readonly Error CannotModifyApproved =
         Error.Problem("Loan.CannotModifyApproved", "Cannot modify a loan that has already been approved.");
 

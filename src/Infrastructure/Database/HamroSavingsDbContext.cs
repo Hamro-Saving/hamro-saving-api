@@ -1,6 +1,7 @@
 using HamroSavings.Application.Abstractions.Data;
 using HamroSavings.Domain.Finance;
 using HamroSavings.Domain.Groups;
+using HamroSavings.Domain.Ledger;
 using HamroSavings.Domain.Loans;
 using HamroSavings.Domain.Members;
 using HamroSavings.Domain.Savings;
@@ -19,6 +20,7 @@ public sealed class HamroSavingsDbContext(DbContextOptions<HamroSavingsDbContext
     public DbSet<Deposit> Deposits { get; init; }
     public DbSet<Loan> Loans { get; init; }
     public DbSet<LoanPayment> LoanPayments { get; init; }
+    public DbSet<LedgerEntry> LedgerEntries { get; init; }
     public DbSet<LoanApproval> LoanApprovals { get; init; }
     public DbSet<Expense> Expenses { get; init; }
     public DbSet<FixedDeposit> FixedDeposits { get; init; }

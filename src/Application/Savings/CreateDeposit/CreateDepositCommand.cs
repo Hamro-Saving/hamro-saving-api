@@ -7,8 +7,8 @@ public sealed record CreateDepositCommand(
     Guid MemberId,
     Guid? GroupId,
     decimal Amount,
-    int DepositMonth,
-    int DepositYear,
+    int? DepositMonth,
+    int? DepositYear,
     DateOnly DepositDate,
     DepositType Type,
     string? Notes) : ICommand<Guid>;

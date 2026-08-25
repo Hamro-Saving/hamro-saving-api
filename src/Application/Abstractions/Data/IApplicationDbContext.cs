@@ -1,5 +1,6 @@
 using HamroSavings.Domain.Finance;
 using HamroSavings.Domain.Groups;
+using HamroSavings.Domain.Ledger;
 using HamroSavings.Domain.Loans;
 using HamroSavings.Domain.Members;
 using HamroSavings.Domain.Savings;
@@ -16,6 +17,7 @@ public interface IApplicationDbContext
     DbSet<Deposit> Deposits { get; }
     DbSet<Loan> Loans { get; }
     DbSet<LoanPayment> LoanPayments { get; }
+    DbSet<LedgerEntry> LedgerEntries { get; }
     DbSet<LoanApproval> LoanApprovals { get; }
     DbSet<Expense> Expenses { get; }
     DbSet<FixedDeposit> FixedDeposits { get; }

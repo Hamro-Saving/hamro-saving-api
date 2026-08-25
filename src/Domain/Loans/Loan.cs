@@ -180,13 +180,24 @@ public sealed class Loan : Entity
             UnpaidInterest));
     }
 
-    public Result Update(decimal amount, decimal interestRate, DateTime? dueDate, string? notes)
+    /// <summary>
+    /// Revises the loan before it is disbursed, by the borrower or an admin.
+    ///
+    /// Any revision returns it to Pending: a vote was cast on the loan as it stood, and
+    /// once it has been changed there is no way to know whether that voter would still
+    /// agree. The caller clears the votes to match.
+    /// </summary>
+    public Result Revise(decimal amount, decimal interestRate, DateTime? dueDate, string? notes)
     {
-        if (Status != LoanStatus.Pending) return Result.Failure(LoanErrors.CannotModifyApproved);
+        if (Status is not (LoanStatus.Pending or LoanStatus.Approved))
+            return Result.Failure(LoanErrors.CannotModifyAfterDisbursement);
+
         Amount = amount;
         InterestRate = interestRate;
         DueDate = dueDate;
         Notes = notes;
+        Status = LoanStatus.Pending;
+
         return Result.Success();
     }
 

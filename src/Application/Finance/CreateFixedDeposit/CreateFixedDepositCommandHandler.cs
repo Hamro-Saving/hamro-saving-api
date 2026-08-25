@@ -1,5 +1,6 @@
 using HamroSavings.Application.Abstractions.Authentication;
 using HamroSavings.Application.Abstractions.Data;
+using HamroSavings.Application.Ledger;
 using HamroSavings.Application.Abstractions.Messaging;
 using HamroSavings.Domain.Finance;
 using HamroSavings.Domain.Groups;
@@ -40,6 +41,8 @@ internal sealed class CreateFixedDepositCommandHandler(
             userContext.UserId);
 
         dbContext.FixedDeposits.Add(fixedDeposit);
+        dbContext.PostFixedDepositPlaced(fixedDeposit.GroupId, fixedDeposit.Id, fixedDeposit.Amount,
+            fixedDeposit.StartDate, $"Fixed deposit placed with {fixedDeposit.InstitutionName}");
         await dbContext.SaveChangesAsync(cancellationToken);
 
         return Result.Success(fixedDeposit.Id);

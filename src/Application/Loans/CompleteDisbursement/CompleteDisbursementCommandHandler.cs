@@ -1,5 +1,6 @@
 using HamroSavings.Application.Abstractions.Authentication;
 using HamroSavings.Application.Abstractions.Data;
+using HamroSavings.Application.Ledger;
 using HamroSavings.Application.Abstractions.Messaging;
 using HamroSavings.Domain.Loans;
 using HamroSavings.Domain.Users;
@@ -29,6 +30,9 @@ internal sealed class CompleteDisbursementCommandHandler(
 
         var result = loan.CompleteDisbursement(userContext.UserId, DateTime.UtcNow);
         if (result.IsFailure) return result;
+
+        dbContext.PostLoanDisbursement(loan.GroupId, loan.Id, loan.BorrowerId, loan.Amount,
+            loan.DisbursedAt ?? DateTime.UtcNow, "Loan disbursed");
 
         await dbContext.SaveChangesAsync(cancellationToken);
         return Result.Success();

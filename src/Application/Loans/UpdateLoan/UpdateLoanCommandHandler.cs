@@ -30,12 +30,6 @@ internal sealed class UpdateLoanCommandHandler(
             (loan.BorrowerType != "Member" || loan.BorrowerId != userContext.ActiveMemberId))
             return Result.Failure(UserErrors.Unauthorized);
 
-        var hasApprovals = await dbContext.LoanApprovals
-            .AnyAsync(a => a.LoanId == command.LoanId, cancellationToken);
-
-        if (hasApprovals)
-            return Result.Failure(LoanErrors.CannotModifyApproved);
-
         decimal interestRate;
         if (command.InterestRate.HasValue && (userContext.IsGroupAdmin))
         {
@@ -49,9 +43,17 @@ internal sealed class UpdateLoanCommandHandler(
                 : (group?.NonMemberInterestRate ?? loan.InterestRate);
         }
 
-        var result = loan.Update(command.Amount, interestRate, command.DueDate, command.Notes);
+        var result = loan.Revise(command.Amount, interestRate, command.DueDate, command.Notes);
         if (result.IsFailure)
             return result;
+
+        // Every vote was cast on the loan as it was before this edit, so none of them
+        // carries over. The group looks at it again.
+        var votes = await dbContext.LoanApprovals
+            .Where(a => a.LoanId == command.LoanId)
+            .ToListAsync(cancellationToken);
+
+        dbContext.LoanApprovals.RemoveRange(votes);
 
         await dbContext.SaveChangesAsync(cancellationToken);
         return Result.Success();

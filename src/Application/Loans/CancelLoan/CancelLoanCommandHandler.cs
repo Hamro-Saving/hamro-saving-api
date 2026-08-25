@@ -15,9 +15,6 @@ internal sealed class CancelLoanCommandHandler(
 {
     public async Task<Result> Handle(CancelLoanCommand command, CancellationToken cancellationToken = default)
     {
-        if (!userContext.IsGroupAdmin)
-            return Result.Failure(UserErrors.Unauthorized);
-
         var loan = await dbContext.Loans
             .FirstOrDefaultAsync(l => l.Id == command.LoanId, cancellationToken);
 
@@ -26,6 +23,13 @@ internal sealed class CancelLoanCommandHandler(
 
         if (!userContext.CanWrite(loan.GroupId))
             return Result.Failure(LoanErrors.NotInGroup);
+
+        // The person who asked for the loan may withdraw the request; an admin may pull
+        // any of them. Either way only until the money has left.
+        var isBorrower = loan.BorrowerType == "Member" && loan.BorrowerId == userContext.ActiveMemberId;
+
+        if (!userContext.IsGroupAdmin && !isBorrower)
+            return Result.Failure(UserErrors.Unauthorized);
 
         var result = loan.Cancel();
         if (result.IsFailure) return result;

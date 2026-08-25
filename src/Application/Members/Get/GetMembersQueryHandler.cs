@@ -1,6 +1,7 @@
 using HamroSavings.Application.Abstractions.Authentication;
 using HamroSavings.Application.Abstractions.Data;
 using HamroSavings.Application.Abstractions.Messaging;
+using HamroSavings.Domain.Loans;
 using HamroSavings.Domain.Members;
 using HamroSavings.SharedKernel;
 using Microsoft.EntityFrameworkCore;
@@ -45,11 +46,44 @@ internal sealed class GetMembersQueryHandler(
                 m.GroupId,
                 m.IsActive,
                 dbContext.Users.Any(u => u.Id == m.UserId && u.IsActive),
+                dbContext.Deposits
+                    .Where(d => d.MemberId == m.Id && d.IsVerified)
+                    .Sum(d => (decimal?)d.Amount) ?? 0,
+                0m,
+                0m,
                 m.PhoneNumber,
                 m.Address,
                 m.CreatedAt))
             .ToListAsync(cancellationToken);
 
-        return Result.Success(members);
+        var owed = await LoansOwedBy(dbContext, members.Select(m => m.Id).ToList(), cancellationToken);
+
+        return Result.Success(members
+            .Select(m => owed.TryGetValue(m.Id, out var o)
+                ? m with { OutstandingPrincipal = o.Principal, OutstandingInterest = o.Interest }
+                : m)
+            .ToList());
+    }
+
+    /// <summary>What each borrower still owes: principal out, plus interest run to today.</summary>
+    internal static async Task<Dictionary<Guid, (decimal Principal, decimal Interest)>> LoansOwedBy(
+        IApplicationDbContext dbContext,
+        IReadOnlyCollection<Guid> borrowerIds,
+        CancellationToken cancellationToken)
+    {
+        if (borrowerIds.Count == 0) return [];
+
+        var loans = await dbContext.Loans
+            .Where(l => borrowerIds.Contains(l.BorrowerId)
+                     && (l.Status == LoanStatus.Active || l.Status == LoanStatus.Overdue))
+            .ToListAsync(cancellationToken);
+
+        var now = DateTime.UtcNow;
+
+        return loans
+            .GroupBy(l => l.BorrowerId)
+            .ToDictionary(
+                g => g.Key,
+                g => (g.Sum(l => l.OutstandingPrincipal), g.Sum(l => l.InterestAccruedAsOf(now))));
     }
 }

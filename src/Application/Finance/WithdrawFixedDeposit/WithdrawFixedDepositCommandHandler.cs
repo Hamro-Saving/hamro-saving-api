@@ -1,5 +1,6 @@
 using HamroSavings.Application.Abstractions.Authentication;
 using HamroSavings.Application.Abstractions.Data;
+using HamroSavings.Application.Ledger;
 using HamroSavings.Application.Abstractions.Messaging;
 using HamroSavings.Domain.Finance;
 using HamroSavings.Domain.Users;
@@ -29,6 +30,12 @@ internal sealed class WithdrawFixedDepositCommandHandler(
 
         var result = fixedDeposit.Withdraw(command.InterestEarned, command.WithdrawnAt, userContext.UserId);
         if (result.IsFailure) return result;
+
+        dbContext.PostFixedDepositWithdrawal(fixedDeposit.GroupId, fixedDeposit.Id, fixedDeposit.Amount,
+            fixedDeposit.WithdrawnAt ?? DateTime.UtcNow, $"Fixed deposit withdrawn from {fixedDeposit.InstitutionName}");
+
+        dbContext.PostFixedDepositInterest(fixedDeposit.GroupId, fixedDeposit.Id, fixedDeposit.InterestEarned ?? 0,
+            fixedDeposit.WithdrawnAt ?? DateTime.UtcNow, $"Fixed deposit interest from {fixedDeposit.InstitutionName}");
 
         await dbContext.SaveChangesAsync(cancellationToken);
         return Result.Success();

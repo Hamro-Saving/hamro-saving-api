@@ -1,5 +1,6 @@
 using HamroSavings.Application.Abstractions.Authentication;
 using HamroSavings.Application.Abstractions.Data;
+using HamroSavings.Application.Ledger;
 using HamroSavings.Application.Abstractions.Messaging;
 using HamroSavings.Domain.Savings;
 using HamroSavings.Domain.Users;
@@ -39,7 +40,20 @@ internal sealed class VerifyDepositCommandHandler(
             return result;
         }
 
+        dbContext.PostDeposit(deposit.GroupId, deposit.Id, deposit.MemberId, deposit.Amount,
+            deposit.DepositDate.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc), DescribeDeposit(deposit));
+
         await dbContext.SaveChangesAsync(cancellationToken);
         return Result.Success();
     }
+
+    private static string DescribeDeposit(Deposit deposit) => deposit.Type switch
+    {
+        // A monthly deposit is identified by the period it covers, in Bikram Sambat.
+        DepositType.MonthlyDeposit =>
+            $"Monthly deposit for {BikramSambat.Period(deposit.DepositMonth!.Value, deposit.DepositYear!.Value)}",
+        DepositType.InterestPayment => "Interest payment received",
+        DepositType.LoanRepayment => "Loan repayment received",
+        _ => "Deposit received",
+    };
 }

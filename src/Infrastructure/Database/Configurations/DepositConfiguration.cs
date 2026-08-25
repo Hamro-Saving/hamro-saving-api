@@ -14,11 +14,8 @@ internal sealed class DepositConfiguration : IEntityTypeConfiguration<Deposit>
             .IsRequired()
             .HasPrecision(18, 2);
 
-        builder.Property(d => d.DepositMonth)
-            .IsRequired();
-
-        builder.Property(d => d.DepositYear)
-            .IsRequired();
+        builder.Property(d => d.DepositMonth);
+        builder.Property(d => d.DepositYear);
 
         builder.Property(d => d.DepositDate)
             .IsRequired();

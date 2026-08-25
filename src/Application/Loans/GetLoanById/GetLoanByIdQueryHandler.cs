@@ -73,7 +73,8 @@ internal sealed class GetLoanByIdQueryHandler(
         var totalVoters = await LoanVoting.EligibleVoters(dbContext)
             .CountAsync(m => m.GroupId == loan.GroupId, cancellationToken);
 
-        var requiredApprovals = LoanVoting.VotesNeeded(totalVoters);
+        var requiredApprovals = LoanVoting.ApprovalsNeeded(totalVoters);
+        var requiredDeclines = LoanVoting.DeclinesNeeded(totalVoters);
         var now = DateTime.UtcNow;
 
         var response = new LoanResponse(
@@ -101,6 +102,7 @@ internal sealed class GetLoanByIdQueryHandler(
             approverList.Count,
             declinerList.Count,
             requiredApprovals,
+            requiredDeclines,
             approverList.Any(a => a.ApproverId == userContext.UserId),
             declinerList.Any(a => a.ApproverId == userContext.UserId),
             approverList,

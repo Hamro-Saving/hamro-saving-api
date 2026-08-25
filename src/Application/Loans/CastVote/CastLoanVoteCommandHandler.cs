@@ -57,7 +57,11 @@ internal sealed class CastLoanVoteCommandHandler(
         var matchingVotes = await dbContext.LoanApprovals
             .CountAsync(a => a.LoanId == command.LoanId && a.IsApproved == command.IsApproved, cancellationToken);
 
-        if (matchingVotes >= LoanVoting.VotesNeeded(totalVoters))
+        var needed = command.IsApproved
+            ? LoanVoting.ApprovalsNeeded(totalVoters)
+            : LoanVoting.DeclinesNeeded(totalVoters);
+
+        if (matchingVotes >= needed)
         {
             var result = Settle(loan, command.IsApproved);
             if (result.IsFailure) return result;

@@ -6,9 +6,17 @@ namespace HamroSavings.Application.Loans;
 internal static class LoanVoting
 {
     /// <summary>
-    /// Votes one way needed to settle a loan: a strict majority of the group's eligible voters.
+    /// Approvals needed to pass a loan: a strict majority of the group's eligible voters,
+    /// so lending out the group's money always takes more than half of them.
     /// </summary>
-    public static int VotesNeeded(int totalVoters) => totalVoters / 2 + 1;
+    public static int ApprovalsNeeded(int totalVoters) => totalVoters / 2 + 1;
+
+    /// <summary>
+    /// Declines needed to refuse a loan: half the voters, not more than half. Refusing is
+    /// deliberately the easier of the two — a group that is evenly split should not be
+    /// lending — so with an even number of voters an exact tie settles as declined.
+    /// </summary>
+    public static int DeclinesNeeded(int totalVoters) => (totalVoters + 1) / 2;
 
     /// <summary>
     /// Who gets a say on a group's loans: everyone who takes part in it. An admin is a member

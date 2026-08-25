@@ -8,8 +8,9 @@ public sealed class Deposit : Entity
     public Guid MemberId { get; private set; }
     public Guid GroupId { get; private set; }
     public decimal Amount { get; private set; }
-    public int DepositMonth { get; private set; }
-    public int DepositYear { get; private set; }
+    /// <summary>The Bikram Sambat month this covers. Only a monthly deposit has one.</summary>
+    public int? DepositMonth { get; private set; }
+    public int? DepositYear { get; private set; }
     public DateOnly DepositDate { get; private set; }
     public DepositType Type { get; private set; }
     public string? Notes { get; private set; }
@@ -25,8 +26,8 @@ public sealed class Deposit : Entity
         Guid memberId,
         Guid groupId,
         decimal amount,
-        int month,
-        int year,
+        int? month,
+        int? year,
         DateOnly depositDate,
         DepositType type,
         string? notes,
@@ -38,8 +39,9 @@ public sealed class Deposit : Entity
             MemberId = memberId,
             GroupId = groupId,
             Amount = amount,
-            DepositMonth = month,
-            DepositYear = year,
+            // A period belongs to a monthly deposit and nothing else.
+            DepositMonth = type == DepositType.MonthlyDeposit ? month : null,
+            DepositYear = type == DepositType.MonthlyDeposit ? year : null,
             DepositDate = depositDate,
             Type = type,
             Notes = notes,

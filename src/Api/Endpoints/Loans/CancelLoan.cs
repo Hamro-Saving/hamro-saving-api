@@ -21,7 +21,7 @@ public sealed class CancelLoan : IEndpoint
                 error => CustomResults.Problem(error));
         })
         .WithTags("Loans")
-        .RequireAuthorization(Policies.GroupAdmin)
-        .WithSummary("Cancel a loan before its disbursement starts (group admin only)");
+        .RequireAuthorization(Policies.GroupMember)
+        .WithSummary("Cancel a loan before its disbursement starts (the borrower or a group admin)");
     }
 }

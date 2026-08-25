@@ -101,15 +101,78 @@ public class LoanLifecycleTests
     }
 
     [Fact]
-    public void Edits_AreRefusedOnceTheLoanLeavesPending()
+    public void AnApprovedLoanCanStillBeRevisedBeforeTheMoneyLeaves()
     {
         var loan = NewLoan();
         loan.ApproveLoan();
 
-        var result = loan.Update(50_000m, 12m, null, null);
+        var result = loan.Revise(50_000m, 12m, null, null);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(50_000m, loan.Amount);
+    }
+
+    [Fact]
+    public void RevisingAnApprovedLoanSendsItBackToTheGroup()
+    {
+        var loan = NewLoan();
+        loan.ApproveLoan();
+
+        // The group approved 100,000. This is a different loan, so their approval
+        // cannot carry over to it.
+        loan.Revise(500_000m, 18m, null, null);
+
+        Assert.Equal(LoanStatus.Pending, loan.Status);
+        Assert.Equal(500_000m, loan.Amount);
+    }
+
+    [Fact]
+    public void EvenAnUnchangedRevisionSendsItBack()
+    {
+        var loan = NewLoan();
+        loan.ApproveLoan();
+
+        // Nothing about the money moved, but the loan was still edited, and there is
+        // no way to know whether a voter would still agree. They look again.
+        loan.Revise(100_000m, 18m, Start.AddMonths(6), "corrected reference");
+
+        Assert.Equal(LoanStatus.Pending, loan.Status);
+        Assert.Equal("corrected reference", loan.Notes);
+    }
+
+    [Fact]
+    public void EditsAreRefusedOnceTheMoneyHasLeft()
+    {
+        var loan = NewLoan();
+        loan.ApproveLoan();
+        loan.CompleteDisbursement(Guid.NewGuid(), Start);
+
+        var result = loan.Revise(50_000m, 12m, null, null);
 
         Assert.True(result.IsFailure);
-        Assert.Equal("Loan.CannotModifyApproved", result.Error.Code);
+        Assert.Equal("Loan.CannotModifyAfterDisbursement", result.Error.Code);
         Assert.Equal(100_000m, loan.Amount);
+    }
+
+    [Fact]
+    public void CancellingIsRefusedOnceTheMoneyHasLeft()
+    {
+        var loan = NewLoan();
+        loan.ApproveLoan();
+        loan.CompleteDisbursement(Guid.NewGuid(), Start);
+
+        Assert.True(loan.Cancel().IsFailure);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void CancellingIsAllowedUntilTheMoneyLeaves(bool approvedFirst)
+    {
+        var loan = NewLoan();
+        if (approvedFirst) loan.ApproveLoan();
+
+        Assert.True(loan.Cancel().IsSuccess);
+        Assert.Equal(LoanStatus.Cancelled, loan.Status);
     }
 }

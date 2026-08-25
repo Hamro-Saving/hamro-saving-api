@@ -1,5 +1,6 @@
 using HamroSavings.Application.Abstractions.Authentication;
 using HamroSavings.Application.Abstractions.Data;
+using HamroSavings.Application.Ledger;
 using HamroSavings.Application.Abstractions.Messaging;
 using HamroSavings.Domain.Loans;
 using HamroSavings.Domain.Users;
@@ -40,6 +41,15 @@ internal sealed class VerifyLoanPaymentCommandHandler(
         if (result.IsFailure)
         {
             return result;
+        }
+
+        if (loan is not null)
+        {
+            dbContext.PostLoanPrincipal(loan.GroupId, payment.Id, loan.BorrowerId,
+                payment.PrincipalAmount, payment.PaidDate, "Loan principal repaid");
+
+            dbContext.PostLoanInterest(loan.GroupId, payment.Id, loan.BorrowerId,
+                payment.InterestAmount, payment.PaidDate, "Loan interest received");
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);
