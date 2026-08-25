@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace HamroSavings.Infrastructure.Database.Migrations
 {
     [DbContext(typeof(HamroSavingsDbContext))]
-    [Migration("20260404100503_SeparateMembersFromUsers")]
-    partial class SeparateMembersFromUsers
+    [Migration("20260825033048_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -21,7 +21,7 @@ namespace HamroSavings.Infrastructure.Database.Migrations
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("public")
-                .HasAnnotation("ProductVersion", "10.0.1")
+                .HasAnnotation("ProductVersion", "10.0.11")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -106,6 +106,11 @@ namespace HamroSavings.Infrastructure.Database.Migrations
                         .HasColumnType("character varying(200)")
                         .HasColumnName("institution_name");
 
+                    b.Property<decimal?>("InterestEarned")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("interest_earned");
+
                     b.Property<decimal>("InterestRate")
                         .HasPrecision(5, 2)
                         .HasColumnType("numeric(5,2)")
@@ -129,10 +134,67 @@ namespace HamroSavings.Infrastructure.Database.Migrations
                         .HasColumnType("text")
                         .HasColumnName("status");
 
+                    b.Property<DateTime?>("WithdrawnAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("withdrawn_at");
+
+                    b.Property<Guid?>("WithdrawnById")
+                        .HasColumnType("uuid")
+                        .HasColumnName("withdrawn_by_id");
+
                     b.HasKey("Id")
                         .HasName("pk_fixed_deposits");
 
                     b.ToTable("fixed_deposits", "public");
+                });
+
+            modelBuilder.Entity("HamroSavings.Domain.Finance.LateJoinerInterest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("amount");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("GroupId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("group_id");
+
+                    b.Property<Guid>("MemberId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("member_id");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("notes");
+
+                    b.Property<DateTime>("PaidDate")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("paid_date");
+
+                    b.Property<Guid>("RecordedById")
+                        .HasColumnType("uuid")
+                        .HasColumnName("recorded_by_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_late_joiner_interests");
+
+                    b.HasIndex("MemberId")
+                        .HasDatabaseName("ix_late_joiner_interests_member_id");
+
+                    b.HasIndex("GroupId", "PaidDate")
+                        .HasDatabaseName("ix_late_joiner_interests_group_id_paid_date");
+
+                    b.ToTable("late_joiner_interests", "public");
                 });
 
             modelBuilder.Entity("HamroSavings.Domain.Groups.Group", b =>
@@ -187,6 +249,14 @@ namespace HamroSavings.Infrastructure.Database.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
 
+                    b.Property<DateTime?>("ValidFrom")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("valid_from");
+
+                    b.Property<DateTime?>("ValidTo")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("valid_to");
+
                     b.HasKey("Id")
                         .HasName("pk_groups");
 
@@ -195,6 +265,84 @@ namespace HamroSavings.Infrastructure.Database.Migrations
                         .HasDatabaseName("ix_groups_code");
 
                     b.ToTable("groups", "public");
+                });
+
+            modelBuilder.Entity("HamroSavings.Domain.Ledger.LedgerEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("amount");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("CreditAccount")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("credit_account");
+
+                    b.Property<string>("DebitAccount")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("debit_account");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("description");
+
+                    b.Property<Guid>("GroupId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("group_id");
+
+                    b.Property<Guid?>("MemberId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("member_id");
+
+                    b.Property<DateTime>("OccurredAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("occurred_at");
+
+                    b.Property<Guid>("SourceId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("source_id");
+
+                    b.Property<string>("SourceType")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("source_type");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("type");
+
+                    b.HasKey("Id")
+                        .HasName("pk_ledger_entries");
+
+                    b.HasIndex("MemberId")
+                        .HasDatabaseName("ix_ledger_entries_member_id");
+
+                    b.HasIndex("GroupId", "OccurredAt")
+                        .HasDatabaseName("ix_ledger_entries_group_id_occurred_at");
+
+                    b.HasIndex("SourceType", "SourceId")
+                        .HasDatabaseName("ix_ledger_entries_source_type_source_id");
+
+                    b.HasIndex("SourceType", "SourceId", "Type")
+                        .IsUnique()
+                        .HasDatabaseName("ix_ledger_entries_source_type_source_id_type");
+
+                    b.ToTable("ledger_entries", "public");
                 });
 
             modelBuilder.Entity("HamroSavings.Domain.Loans.Loan", b =>
@@ -208,10 +356,6 @@ namespace HamroSavings.Infrastructure.Database.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)")
                         .HasColumnName("amount");
-
-                    b.Property<Guid?>("ApprovedById")
-                        .HasColumnType("uuid")
-                        .HasColumnName("approved_by_id");
 
                     b.Property<Guid>("BorrowerId")
                         .HasColumnType("uuid")
@@ -227,6 +371,14 @@ namespace HamroSavings.Infrastructure.Database.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
+                    b.Property<DateTime?>("DisbursedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("disbursed_at");
+
+                    b.Property<Guid?>("DisbursedById")
+                        .HasColumnType("uuid")
+                        .HasColumnName("disbursed_by_id");
+
                     b.Property<DateTime?>("DueDate")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("due_date");
@@ -240,10 +392,19 @@ namespace HamroSavings.Infrastructure.Database.Migrations
                         .HasColumnType("numeric(5,2)")
                         .HasColumnName("interest_rate");
 
+                    b.Property<DateTime?>("LastAccrualDate")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("last_accrual_date");
+
                     b.Property<string>("Notes")
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)")
                         .HasColumnName("notes");
+
+                    b.Property<decimal>("OutstandingPrincipal")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("outstanding_principal");
 
                     b.Property<DateTime>("StartDate")
                         .HasColumnType("timestamp with time zone")
@@ -253,6 +414,26 @@ namespace HamroSavings.Infrastructure.Database.Migrations
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("status");
+
+                    b.Property<decimal>("TotalInterestAccrued")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("total_interest_accrued");
+
+                    b.Property<decimal>("TotalInterestPaid")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("total_interest_paid");
+
+                    b.Property<decimal>("TotalPrincipalPaid")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("total_principal_paid");
+
+                    b.Property<decimal>("UnpaidInterest")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("unpaid_interest");
 
                     b.HasKey("Id")
                         .HasName("pk_loans");
@@ -274,6 +455,12 @@ namespace HamroSavings.Infrastructure.Database.Migrations
                     b.Property<Guid>("ApproverId")
                         .HasColumnType("uuid")
                         .HasColumnName("approver_id");
+
+                    b.Property<bool>("IsApproved")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("is_approved");
 
                     b.Property<Guid>("LoanId")
                         .HasColumnType("uuid")
@@ -309,10 +496,19 @@ namespace HamroSavings.Infrastructure.Database.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("created_by_id");
 
+                    b.Property<int>("DaysAccrued")
+                        .HasColumnType("integer")
+                        .HasColumnName("days_accrued");
+
                     b.Property<decimal>("InterestAmount")
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)")
                         .HasColumnName("interest_amount");
+
+                    b.Property<decimal>("InterestOwedBefore")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("interest_owed_before");
 
                     b.Property<bool>("IsVerified")
                         .ValueGeneratedOnAdd()
@@ -329,6 +525,11 @@ namespace HamroSavings.Infrastructure.Database.Migrations
                         .HasColumnType("character varying(500)")
                         .HasColumnName("notes");
 
+                    b.Property<decimal>("OutstandingPrincipalAfter")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("outstanding_principal_after");
+
                     b.Property<DateTime>("PaidDate")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("paid_date");
@@ -342,6 +543,11 @@ namespace HamroSavings.Infrastructure.Database.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)")
                         .HasColumnName("principal_amount");
+
+                    b.Property<decimal>("UnpaidInterestAfter")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("unpaid_interest_after");
 
                     b.Property<DateTime?>("VerifiedAt")
                         .HasColumnType("timestamp with time zone")
@@ -367,82 +573,6 @@ namespace HamroSavings.Infrastructure.Database.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
-
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)")
-                        .HasColumnName("email");
-
-                    b.Property<string>("FirstName")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasColumnName("first_name");
-
-                    b.Property<Guid>("GroupId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("group_id");
-
-                    b.Property<bool>("IsActive")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true)
-                        .HasColumnName("is_active");
-
-                    b.Property<string>("LastName")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasColumnName("last_name");
-
-                    b.Property<string>("PhoneNumber")
-                        .HasMaxLength(30)
-                        .HasColumnType("character varying(30)")
-                        .HasColumnName("phone_number");
-
-                    b.Property<string>("Role")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("role");
-
-                    b.Property<Guid?>("SignupToken")
-                        .HasColumnType("uuid")
-                        .HasColumnName("signup_token");
-
-                    b.Property<DateTime?>("SignupTokenExpiresAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("signup_token_expires_at");
-
-                    b.Property<Guid?>("UserId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("user_id");
-
-                    b.HasKey("Id")
-                        .HasName("pk_members");
-
-                    b.HasIndex("SignupToken")
-                        .IsUnique()
-                        .HasDatabaseName("ix_members_signup_token")
-                        .HasFilter("signup_token IS NOT NULL");
-
-                    b.HasIndex("Email", "GroupId")
-                        .IsUnique()
-                        .HasDatabaseName("ix_members_email_group_id");
-
-                    b.ToTable("members", "public");
-                });
-
-            modelBuilder.Entity("HamroSavings.Domain.Members.NonMember", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
                     b.Property<string>("Address")
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)")
@@ -457,15 +587,20 @@ namespace HamroSavings.Infrastructure.Database.Migrations
                         .HasColumnType("character varying(256)")
                         .HasColumnName("email");
 
-                    b.Property<string>("FullName")
+                    b.Property<string>("FirstName")
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)")
-                        .HasColumnName("full_name");
+                        .HasColumnName("first_name");
 
                     b.Property<Guid>("GroupId")
                         .HasColumnType("uuid")
                         .HasColumnName("group_id");
+
+                    b.Property<string>("GroupRole")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("group_role");
 
                     b.Property<bool>("IsActive")
                         .ValueGeneratedOnAdd()
@@ -473,15 +608,37 @@ namespace HamroSavings.Infrastructure.Database.Migrations
                         .HasDefaultValue(true)
                         .HasColumnName("is_active");
 
-                    b.Property<string>("Phone")
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)")
-                        .HasColumnName("phone");
+                    b.Property<string>("LastName")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("last_name");
+
+                    b.Property<string>("PhoneNumber")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("phone_number");
+
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
 
                     b.HasKey("Id")
-                        .HasName("pk_non_members");
+                        .HasName("pk_members");
 
-                    b.ToTable("non_members", "public");
+                    b.HasIndex("GroupId")
+                        .HasDatabaseName("ix_members_group_id");
+
+                    b.HasIndex("Email", "GroupId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_members_email_group_id")
+                        .HasFilter("email IS NOT NULL");
+
+                    b.HasIndex("UserId", "GroupId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_members_user_id_group_id")
+                        .HasFilter("user_id IS NOT NULL");
+
+                    b.ToTable("members", "public");
                 });
 
             modelBuilder.Entity("HamroSavings.Domain.Savings.Deposit", b =>
@@ -508,11 +665,11 @@ namespace HamroSavings.Infrastructure.Database.Migrations
                         .HasColumnType("date")
                         .HasColumnName("deposit_date");
 
-                    b.Property<int>("DepositMonth")
+                    b.Property<int?>("DepositMonth")
                         .HasColumnType("integer")
                         .HasColumnName("deposit_month");
 
-                    b.Property<int>("DepositYear")
+                    b.Property<int?>("DepositYear")
                         .HasColumnType("integer")
                         .HasColumnName("deposit_year");
 
@@ -571,41 +728,30 @@ namespace HamroSavings.Infrastructure.Database.Migrations
                         .HasColumnType("character varying(256)")
                         .HasColumnName("email");
 
-                    b.Property<string>("FirstName")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasColumnName("first_name");
-
-                    b.Property<Guid?>("GroupId")
+                    b.Property<Guid?>("InviteToken")
                         .HasColumnType("uuid")
-                        .HasColumnName("group_id");
+                        .HasColumnName("invite_token");
+
+                    b.Property<DateTime?>("InviteTokenExpiresAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("invite_token_expires_at");
 
                     b.Property<bool>("IsActive")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
-                        .HasDefaultValue(true)
+                        .HasDefaultValue(false)
                         .HasColumnName("is_active");
 
-                    b.Property<string>("LastName")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasColumnName("last_name");
-
-                    b.Property<Guid?>("MemberId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("member_id");
+                    b.Property<bool>("IsSuperAdmin")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_super_admin");
 
                     b.Property<string>("PasswordHash")
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("password_hash");
-
-                    b.Property<string>("Role")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("role");
 
                     b.HasKey("Id")
                         .HasName("pk_users");
@@ -614,7 +760,22 @@ namespace HamroSavings.Infrastructure.Database.Migrations
                         .IsUnique()
                         .HasDatabaseName("ix_users_email");
 
+                    b.HasIndex("InviteToken")
+                        .IsUnique()
+                        .HasDatabaseName("ix_users_invite_token")
+                        .HasFilter("invite_token IS NOT NULL");
+
                     b.ToTable("users", "public");
+                });
+
+            modelBuilder.Entity("HamroSavings.Domain.Ledger.LedgerEntry", b =>
+                {
+                    b.HasOne("HamroSavings.Domain.Groups.Group", null)
+                        .WithMany()
+                        .HasForeignKey("GroupId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_ledger_entries_groups_group_id");
                 });
 
             modelBuilder.Entity("HamroSavings.Domain.Loans.LoanPayment", b =>
@@ -625,6 +786,22 @@ namespace HamroSavings.Infrastructure.Database.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_loan_payments_loans_loan_id");
+                });
+
+            modelBuilder.Entity("HamroSavings.Domain.Members.Member", b =>
+                {
+                    b.HasOne("HamroSavings.Domain.Groups.Group", null)
+                        .WithMany()
+                        .HasForeignKey("GroupId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_members_groups_group_id");
+
+                    b.HasOne("HamroSavings.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_members_users_user_id");
                 });
 #pragma warning restore 612, 618
         }
