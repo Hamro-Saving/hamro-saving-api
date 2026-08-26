@@ -33,8 +33,16 @@ public static class ApplicationBuilderExtensions
         if (dbContext.Users.Any(u => u.IsSuperAdmin))
             return;
 
-        var email = configuration["SuperAdmin:Email"] ?? throw new InvalidOperationException("SuperAdmin:Email is not configured.");
-        var password = configuration["SuperAdmin:Password"] ?? throw new InvalidOperationException("SuperAdmin:Password is not configured.");
+        var email = configuration["SuperAdmin:Email"];
+        var password = configuration["SuperAdmin:Password"];
+
+        // Blank is as dangerous as missing: an unconfigured deployment must refuse to start
+        // rather than quietly create an administrator whose credentials everyone can read.
+        if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
+        {
+            throw new InvalidOperationException(
+                "SuperAdmin:Email and SuperAdmin:Password must be configured to seed the first super admin.");
+        }
 
         var passwordHash = passwordHasher.Hash(password);
         // SuperAdmin has no Member record

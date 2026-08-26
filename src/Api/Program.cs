@@ -75,8 +75,12 @@ if (app.Environment.IsDevelopment())
         options.Title = "HamroSavings API";
         options.AddHttpAuthentication("Bearer", scheme => { scheme.Token = string.Empty; });
     });
-    app.ApplyMigrations();
 }
+
+// The schema and the first super admin have to exist wherever the app runs, not just locally.
+// This assumes a single worker: if the app is ever scaled out, concurrent Migrate() calls can
+// deadlock against each other, and migrations should move to a deployment step instead.
+app.ApplyMigrations();
 
 app.UseSerilogRequestLogging();
 app.UseCors();

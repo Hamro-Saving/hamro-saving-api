@@ -22,6 +22,7 @@ public sealed class Error
     public static Error Conflict(string code, string description) => new(code, description, ErrorType.Conflict);
     public static Error Validation(string code, string description) => new(code, description, ErrorType.Validation);
     public static Error Forbidden(string code, string description) => new(code, description, ErrorType.Forbidden);
+    public static Error Unauthorized(string code, string description) => new(code, description, ErrorType.Unauthorized);
 
     public override string ToString() => $"{Code}: {Description}";
 }
@@ -33,5 +34,6 @@ public enum ErrorType
     Problem,
     Conflict,
     Validation,
-    Forbidden
+    Forbidden,
+    Unauthorized
 }

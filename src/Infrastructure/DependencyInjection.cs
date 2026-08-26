@@ -32,7 +32,7 @@ public static class DependencyInjection
     {
         services.AddDbContext<HamroSavingsDbContext>(options =>
         {
-            options.UseNpgsql(configuration.GetConnectionString("hamrosavings-db"))
+            options.UseNpgsql(configuration.GetConnectionString("HamroSavingsDb"))
                    .UseSnakeCaseNamingConvention();
         });
 

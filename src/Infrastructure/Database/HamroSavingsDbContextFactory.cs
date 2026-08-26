@@ -17,7 +17,7 @@ public sealed class HamroSavingsDbContextFactory : IDesignTimeDbContextFactory<H
 
         var optionsBuilder = new DbContextOptionsBuilder<HamroSavingsDbContext>();
         optionsBuilder
-            .UseNpgsql(configuration.GetConnectionString("hamrosavings-db"))
+            .UseNpgsql(configuration.GetConnectionString("HamroSavingsDb"))
             .UseSnakeCaseNamingConvention();
 
         return new HamroSavingsDbContext(optionsBuilder.Options);

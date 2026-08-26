@@ -11,7 +11,7 @@ public static class UserErrors
         Error.Conflict("User.EmailNotUnique", "A user with this email already exists.");
 
     public static readonly Error InvalidCredentials =
-        Error.Problem("User.InvalidCredentials", "Invalid email or password.");
+        Error.Unauthorized("User.InvalidCredentials", "Invalid email or password.");
 
     public static readonly Error NotActive =
         Error.Problem("User.NotActive", "The user account is not active.");
