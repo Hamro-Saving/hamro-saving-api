@@ -7,6 +7,8 @@ public sealed record ExpenseResponse(
     string Category,
     string Description,
     DateTime ExpenseDate,
-    Guid? ApprovedById,
+    bool IsVerified,
+    Guid? VerifiedById,
+    DateTime? VerifiedAt,
     Guid CreatedById,
     DateTime CreatedAt);

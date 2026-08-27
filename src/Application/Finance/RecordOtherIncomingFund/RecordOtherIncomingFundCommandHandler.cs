@@ -10,9 +10,8 @@ using Microsoft.EntityFrameworkCore;
 namespace HamroSavings.Application.Finance.RecordOtherIncomingFund;
 
 /// <summary>
-/// Records what a late-joining member paid to catch up with the group. Money coming in,
-/// so unlike an expense or a loan there is nothing to check it against — the group is
-/// receiving rather than committing.
+/// Records what a late-joining member paid to catch up. No cash rule applies — the group is
+/// receiving, not committing.
 /// </summary>
 internal sealed class RecordOtherIncomingFundCommandHandler(
     IApplicationDbContext dbContext,
@@ -40,9 +39,7 @@ internal sealed class RecordOtherIncomingFundCommandHandler(
         var record = recordResult.Value;
         dbContext.OtherIncomingFunds.Add(record);
 
-        dbContext.PostOtherIncome(groupId, record.Id, record.MemberId, record.Amount,
-            record.PaidDate, $"Late joiner interest from {member.FullName}");
-
+        // Posted to the ledger only once an admin has verified it.
         await dbContext.SaveChangesAsync(cancellationToken);
         return Result.Success(record.Id);
     }

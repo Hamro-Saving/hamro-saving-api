@@ -31,12 +31,8 @@ internal sealed class WithdrawFixedDepositCommandHandler(
         var result = fixedDeposit.Withdraw(command.InterestEarned, command.WithdrawnAt, userContext.UserId);
         if (result.IsFailure) return result;
 
-        dbContext.PostFixedDepositWithdrawal(fixedDeposit.GroupId, fixedDeposit.Id, fixedDeposit.Amount,
-            fixedDeposit.WithdrawnAt ?? DateTime.UtcNow, $"Fixed deposit withdrawn from {fixedDeposit.InstitutionName}");
-
-        dbContext.PostFixedDepositInterest(fixedDeposit.GroupId, fixedDeposit.Id, fixedDeposit.InterestEarned ?? 0,
-            fixedDeposit.WithdrawnAt ?? DateTime.UtcNow, $"Fixed deposit interest from {fixedDeposit.InstitutionName}");
-
+        // Posted on verification: the interest figure is whatever was typed in, and it becomes
+        // the group's income.
         await dbContext.SaveChangesAsync(cancellationToken);
         return Result.Success();
     }

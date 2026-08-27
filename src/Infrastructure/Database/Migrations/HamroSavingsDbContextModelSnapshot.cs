@@ -35,10 +35,6 @@ namespace HamroSavings.Infrastructure.Database.Migrations
                         .HasColumnType("numeric(18,2)")
                         .HasColumnName("amount");
 
-                    b.Property<Guid?>("ApprovedById")
-                        .HasColumnType("uuid")
-                        .HasColumnName("approved_by_id");
-
                     b.Property<string>("Category")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -66,6 +62,18 @@ namespace HamroSavings.Infrastructure.Database.Migrations
                     b.Property<Guid>("GroupId")
                         .HasColumnType("uuid")
                         .HasColumnName("group_id");
+
+                    b.Property<bool>("IsVerified")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_verified");
+
+                    b.Property<DateTime?>("VerifiedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("verified_at");
+
+                    b.Property<Guid?>("VerifiedById")
+                        .HasColumnType("uuid")
+                        .HasColumnName("verified_by_id");
 
                     b.HasKey("Id")
                         .HasName("pk_expenses");
@@ -113,6 +121,14 @@ namespace HamroSavings.Infrastructure.Database.Migrations
                         .HasColumnType("numeric(5,2)")
                         .HasColumnName("interest_rate");
 
+                    b.Property<bool>("IsVerified")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_verified");
+
+                    b.Property<bool>("IsWithdrawalVerified")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_withdrawal_verified");
+
                     b.Property<DateTime>("MaturityDate")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("maturity_date");
@@ -130,6 +146,22 @@ namespace HamroSavings.Infrastructure.Database.Migrations
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("status");
+
+                    b.Property<DateTime?>("VerifiedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("verified_at");
+
+                    b.Property<Guid?>("VerifiedById")
+                        .HasColumnType("uuid")
+                        .HasColumnName("verified_by_id");
+
+                    b.Property<DateTime?>("WithdrawalVerifiedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("withdrawal_verified_at");
+
+                    b.Property<Guid?>("WithdrawalVerifiedById")
+                        .HasColumnType("uuid")
+                        .HasColumnName("withdrawal_verified_by_id");
 
                     b.Property<DateTime?>("WithdrawnAt")
                         .HasColumnType("timestamp with time zone")
@@ -165,6 +197,10 @@ namespace HamroSavings.Infrastructure.Database.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("group_id");
 
+                    b.Property<bool>("IsVerified")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_verified");
+
                     b.Property<Guid>("MemberId")
                         .HasColumnType("uuid")
                         .HasColumnName("member_id");
@@ -182,6 +218,14 @@ namespace HamroSavings.Infrastructure.Database.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)")
                         .HasColumnName("remarks");
+
+                    b.Property<DateTime?>("VerifiedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("verified_at");
+
+                    b.Property<Guid?>("VerifiedById")
+                        .HasColumnType("uuid")
+                        .HasColumnName("verified_by_id");
 
                     b.HasKey("Id")
                         .HasName("pk_other_incoming_funds");

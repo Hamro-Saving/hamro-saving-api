@@ -13,7 +13,11 @@ public sealed record FixedDepositResponse(
     DateTime MaturityDate,
     FixedDepositStatus Status,
     string? Notes,
+    bool IsVerified,
+    DateTime? VerifiedAt,
     // Set once the deposit has been withdrawn
     decimal? InterestEarned,
     DateTime? WithdrawnAt,
+    bool IsWithdrawalVerified,
+    DateTime? WithdrawalVerifiedAt,
     DateTime CreatedAt);

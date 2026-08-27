@@ -10,6 +10,18 @@ public class FixedDepositTests
     private static FixedDeposit Deposit() =>
         FixedDeposit.Create(Guid.NewGuid(), "Nabil Bank", 200_000m, 9m, Start, Maturity, null, Guid.NewGuid());
 
+    /// <summary>
+    /// A deposit whose placement an admin has checked, which is what puts it on the group's
+    /// books. Withdrawal rules are only reachable from here: money cannot come back off a
+    /// placement the ledger has never been told about.
+    /// </summary>
+    private static FixedDeposit PlacedDeposit()
+    {
+        var fd = Deposit();
+        fd.Verify(Guid.NewGuid());
+        return fd;
+    }
+
     [Fact]
     public void NewDeposit_IsActive()
     {
@@ -51,7 +63,7 @@ public class FixedDepositTests
     [Fact]
     public void WithdrawnDeposit_StaysWithdrawnAfterMaturity()
     {
-        var fd = Deposit();
+        var fd = PlacedDeposit();
         fd.Withdraw(18_000m, Maturity, Guid.NewGuid());
 
         Assert.Equal(FixedDepositStatus.Withdrawn, fd.StatusAsOf(Maturity.AddDays(30)));
@@ -60,7 +72,7 @@ public class FixedDepositTests
     [Fact]
     public void Withdrawal_RecordsTheInterestActuallyReturned()
     {
-        var fd = Deposit();
+        var fd = PlacedDeposit();
         var admin = Guid.NewGuid();
         var on = Maturity.AddDays(3);
 
@@ -77,7 +89,7 @@ public class FixedDepositTests
     [Fact]
     public void EarlyWithdrawal_IsAllowedAndKeepsItsOwnInterestFigure()
     {
-        var fd = Deposit();
+        var fd = PlacedDeposit();
 
         var result = fd.Withdraw(4_000m, Maturity.AddMonths(-2), Guid.NewGuid());
 
@@ -89,7 +101,7 @@ public class FixedDepositTests
     [Fact]
     public void Withdrawal_IsRefused_WhenAlreadyWithdrawn()
     {
-        var fd = Deposit();
+        var fd = PlacedDeposit();
         fd.Withdraw(18_000m, Maturity, Guid.NewGuid());
 
         var result = fd.Withdraw(500m, Maturity.AddDays(1), Guid.NewGuid());
@@ -102,7 +114,7 @@ public class FixedDepositTests
     [Fact]
     public void Withdrawal_IsRefused_WhenInterestIsNegative()
     {
-        var fd = Deposit();
+        var fd = PlacedDeposit();
 
         var result = fd.Withdraw(-1m, Maturity, Guid.NewGuid());
 
@@ -114,7 +126,7 @@ public class FixedDepositTests
     [Fact]
     public void Withdrawal_IsRefused_WhenDatedBeforeTheDepositStarted()
     {
-        var fd = Deposit();
+        var fd = PlacedDeposit();
 
         var result = fd.Withdraw(0m, Start.AddDays(-1), Guid.NewGuid());
 
@@ -125,7 +137,7 @@ public class FixedDepositTests
     [Fact]
     public void ZeroInterest_IsAcceptable()
     {
-        var fd = Deposit();
+        var fd = PlacedDeposit();
 
         Assert.True(fd.Withdraw(0m, Maturity, Guid.NewGuid()).IsSuccess);
         Assert.Equal(0m, fd.InterestEarned);

@@ -2,10 +2,8 @@ using HamroSavings.Application.Abstractions.Authentication;
 using HamroSavings.Application.Abstractions.Data;
 using HamroSavings.Application.Ledger;
 using HamroSavings.Application.Abstractions.Messaging;
-using HamroSavings.Application.Finance.CreateExpense;
 using HamroSavings.Domain.Finance;
 using HamroSavings.Domain.Groups;
-using HamroSavings.Domain.Users;
 using HamroSavings.SharedKernel;
 using Microsoft.EntityFrameworkCore;
 
@@ -31,9 +29,6 @@ internal sealed class CreateExpenseCommandHandler(
             return Result.Failure<Guid>(GroupErrors.NotFound(groupId));
         }
 
-
-        // The rule about what the group may commit lives on CashInHand; the balance is
-        // read from the books here.
         var inHand = await CashPosition.InHandAsync(dbContext, groupId, cancellationToken);
         var covered = inHand.EnsureCovers(command.Amount);
         if (covered.IsFailure) return Result.Failure<Guid>(covered.Error);
@@ -47,8 +42,6 @@ internal sealed class CreateExpenseCommandHandler(
             userContext.UserId);
 
         dbContext.Expenses.Add(expense);
-        dbContext.PostExpense(expense.GroupId, expense.Id, expense.Amount, expense.ExpenseDate,
-            $"{expense.Category}: {expense.Description}");
         await dbContext.SaveChangesAsync(cancellationToken);
 
         return Result.Success(expense.Id);

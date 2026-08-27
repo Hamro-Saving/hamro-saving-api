@@ -34,6 +34,8 @@ internal sealed class GetOtherIncomingFundsQueryHandler(
                 r.Amount,
                 r.PaidDate,
                 r.Remarks,
+                r.IsVerified,
+                r.VerifiedAt,
                 r.CreatedAt))
             .ToListAsync(cancellationToken);
 

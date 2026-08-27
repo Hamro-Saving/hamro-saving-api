@@ -2,14 +2,12 @@ using HamroSavings.Application.Abstractions.Authentication;
 using HamroSavings.Application.Abstractions.Data;
 using HamroSavings.Application.Abstractions.Email;
 using HamroSavings.Application.Abstractions.Messaging;
-using HamroSavings.Application.Abstractions.Settings;
 using HamroSavings.Domain.Groups;
 using HamroSavings.Domain.Members;
 using HamroSavings.Domain.Users;
 using HamroSavings.SharedKernel;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 namespace HamroSavings.Application.Members.Create;
 
@@ -18,8 +16,7 @@ internal sealed class CreateMemberCommandHandler(
     IUserContext userContext,
     IPasswordHasher passwordHasher,
     IEmailService emailService,
-    ILogger<CreateMemberCommandHandler> logger,
-    IOptions<FrontendSettings> frontendSettings)
+    ILogger<CreateMemberCommandHandler> logger)
     : ICommandHandler<CreateMemberCommand, Guid>
 {
     public async Task<Result<Guid>> Handle(CreateMemberCommand command, CancellationToken cancellationToken = default)
@@ -42,7 +39,6 @@ internal sealed class CreateMemberCommandHandler(
         if (!group.IsActive)
             return Result.Failure<Guid>(GroupErrors.NotActive);
 
-        // Email is the login identity, so uniqueness is per group regardless of role.
         if (!string.IsNullOrEmpty(command.Email))
         {
             bool emailExists = await dbContext.Members
@@ -100,11 +96,10 @@ internal sealed class CreateMemberCommandHandler(
         // An already-active account just gains the membership; no invite to send.
         if (inviteToken is not null)
         {
-            var signupLink = $"{frontendSettings.Value.Url}/signup?token={inviteToken}";
-
             try
             {
-                await emailService.SendMemberInviteAsync(member.Email!, member.FullName, signupLink, cancellationToken);
+                await emailService.SendMemberInviteAsync(
+                    new EmailRecipient(member.Email!, member.FullName), group, inviteToken.Value, cancellationToken);
             }
             catch (Exception ex)
             {

@@ -6,12 +6,15 @@ using HamroSavings.Domain.Loans;
 using HamroSavings.Domain.Members;
 using HamroSavings.Domain.Savings;
 using HamroSavings.Domain.Users;
+using HamroSavings.SharedKernel;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace HamroSavings.Infrastructure.Database;
 
-public sealed class HamroSavingsDbContext(DbContextOptions<HamroSavingsDbContext> options)
+public sealed class HamroSavingsDbContext(
+    DbContextOptions<HamroSavingsDbContext> options,
+    IDomainEventPublisher domainEventPublisher)
     : DbContext(options), IApplicationDbContext
 {
     public DbSet<Group> Groups { get; init; }
@@ -46,7 +49,31 @@ public sealed class HamroSavingsDbContext(DbContextOptions<HamroSavingsDbContext
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         var result = await base.SaveChangesAsync(cancellationToken);
+
+        var domainEvents = DrainDomainEvents();
+        if (domainEvents.Count > 0)
+        {
+            domainEventPublisher.Publish(domainEvents);
+        }
+
         return result;
+    }
+
+    private List<IDomainEvent> DrainDomainEvents()
+    {
+        var entities = ChangeTracker.Entries<Entity>()
+            .Select(entry => entry.Entity)
+            .Where(entity => entity.DomainEvents.Count > 0)
+            .ToList();
+
+        var domainEvents = entities.SelectMany(entity => entity.DomainEvents).ToList();
+
+        foreach (var entity in entities)
+        {
+            entity.ClearDomainEvents();
+        }
+
+        return domainEvents;
     }
 }
 

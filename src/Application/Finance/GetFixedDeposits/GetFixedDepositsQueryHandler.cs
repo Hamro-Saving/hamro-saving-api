@@ -43,8 +43,12 @@ internal sealed class GetFixedDepositsQueryHandler(
                 // Reported as matured from the maturity date on, without waiting for anyone to record it
                 fd.StatusAsOf(now),
                 fd.Notes,
+                fd.IsVerified,
+                fd.VerifiedAt,
                 fd.InterestEarned,
                 fd.WithdrawnAt,
+                fd.IsWithdrawalVerified,
+                fd.WithdrawalVerifiedAt,
                 fd.CreatedAt))
             .ToList();
 

@@ -1,7 +1,6 @@
 using HamroSavings.Application.Abstractions.Authentication;
 using HamroSavings.Application.Abstractions.Data;
 using HamroSavings.Application.Abstractions.Messaging;
-using HamroSavings.Domain.Finance;
 using HamroSavings.Domain.Savings;
 using HamroSavings.SharedKernel;
 using Microsoft.EntityFrameworkCore;
@@ -67,10 +66,10 @@ internal sealed class GetFinancialSummaryQueryHandler(
             .Where(p => p.IsVerified)
             .SumAsync(p => (decimal?)p.InterestAmount, cancellationToken) ?? 0;
 
-        // Interest a withdrawn fixed deposit actually paid out is income too, and without it
-        // that money would disappear from the books the moment the deposit is closed.
+        // Counted from the verified withdrawal, not the withdrawn status: the interest becomes
+        // income when it is posted, and recording a withdrawal no longer posts it.
         var fixedDepositInterest = await fixedDepositsQuery
-            .Where(fd => fd.Status == FixedDepositStatus.Withdrawn)
+            .Where(fd => fd.IsWithdrawalVerified)
             .SumAsync(fd => fd.InterestEarned, cancellationToken) ?? 0;
 
         var lateJoinerQuery = dbContext.OtherIncomingFunds.AsQueryable();
@@ -78,17 +77,22 @@ internal sealed class GetFinancialSummaryQueryHandler(
             lateJoinerQuery = lateJoinerQuery.Where(r => r.GroupId == groupId.Value);
 
         var lateJoinerInterest = await lateJoinerQuery
+            .Where(r => r.IsVerified)
             .SumAsync(r => (decimal?)r.Amount, cancellationToken) ?? 0;
 
         var totalInterestCollected = loanInterestCollected + fixedDepositInterest + lateJoinerInterest;
 
+        // Counting an unverified one would spend the money on this page while the spending
+        // limit, which reads the ledger, still says it is available.
         var totalExpenses = await expensesQuery
+            .Where(e => e.IsVerified)
             .SumAsync(e => (decimal?)e.Amount, cancellationToken) ?? 0;
 
-        // Matured money is still sitting with the institution until it is withdrawn,
-        // so it stays in the fixed-deposit bucket and out of in-hand cash.
+        // What the ledger holds as placed: verified on and not yet verified back off. Money
+        // recorded as withdrawn but unchecked stays here — the ledger has not been told it
+        // came back.
         var totalFixedDeposits = await fixedDepositsQuery
-            .Where(fd => fd.Status != FixedDepositStatus.Withdrawn)
+            .Where(fd => fd.IsVerified && !fd.IsWithdrawalVerified)
             .SumAsync(fd => (decimal?)fd.Amount, cancellationToken) ?? 0;
 
         var inHandCash = totalSavings + totalInterestCollected - totalOnLoan - totalExpenses - totalFixedDeposits;

@@ -38,7 +38,7 @@ public sealed class LoanPayment : Entity
         string? notes,
         Guid createdById)
     {
-        return new LoanPayment
+        var payment = new LoanPayment
         {
             Id = Guid.CreateVersion7(),
             LoanId = loanId,
@@ -56,6 +56,8 @@ public sealed class LoanPayment : Entity
             OutstandingPrincipalAfter = allocation.OutstandingPrincipalAfter,
             UnpaidInterestAfter = allocation.UnpaidInterestAfter
         };
+        payment.Raise(new LoanPaymentRecordedDomainEvent(payment.Id, payment.LoanId));
+        return payment;
     }
 
     private static LoanPaymentType TypeOf(LoanPaymentAllocation allocation) =>
@@ -69,6 +71,7 @@ public sealed class LoanPayment : Entity
         IsVerified = true;
         VerifiedById = verifiedById;
         VerifiedAt = DateTime.UtcNow;
+        Raise(new LoanPaymentVerifiedDomainEvent(Id, LoanId));
         return Result.Success();
     }
 }

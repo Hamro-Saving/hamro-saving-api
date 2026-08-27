@@ -33,7 +33,7 @@ public sealed class Deposit : Entity
         string? notes,
         Guid createdById)
     {
-        return new Deposit
+        var deposit = new Deposit
         {
             Id = Guid.CreateVersion7(),
             MemberId = memberId,
@@ -49,6 +49,8 @@ public sealed class Deposit : Entity
             CreatedById = createdById,
             CreatedAt = DateTime.UtcNow
         };
+        deposit.Raise(new DepositRecordedDomainEvent(deposit.Id, deposit.MemberId, deposit.GroupId));
+        return deposit;
     }
 
     public Result Verify(Guid verifiedById)

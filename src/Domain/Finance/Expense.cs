@@ -10,7 +10,9 @@ public sealed class Expense : Entity
     public string Category { get; private set; } = string.Empty;
     public string Description { get; private set; } = string.Empty;
     public DateTime ExpenseDate { get; private set; }
-    public Guid? ApprovedById { get; private set; }
+    public bool IsVerified { get; private set; }
+    public Guid? VerifiedById { get; private set; }
+    public DateTime? VerifiedAt { get; private set; }
     public Guid CreatedById { get; private set; }
     public DateTime CreatedAt { get; private set; }
 
@@ -24,7 +26,7 @@ public sealed class Expense : Entity
         DateTime expenseDate,
         Guid createdById)
     {
-        return new Expense
+        var expense = new Expense
         {
             Id = Guid.CreateVersion7(),
             GroupId = groupId,
@@ -32,18 +34,32 @@ public sealed class Expense : Entity
             Category = category,
             Description = description,
             ExpenseDate = expenseDate,
+            IsVerified = false,
             CreatedById = createdById,
             CreatedAt = DateTime.UtcNow
         };
+        expense.Raise(new ExpenseRecordedDomainEvent(expense.Id, expense.GroupId));
+        return expense;
     }
 
-    public void Approve(Guid approvedById) => ApprovedById = approvedById;
-
-    public void Update(decimal amount, string category, string description, DateTime expenseDate)
+    public Result Verify(Guid verifiedById)
     {
+        if (IsVerified) return Result.Failure(ExpenseErrors.AlreadyVerified);
+        IsVerified = true;
+        VerifiedById = verifiedById;
+        VerifiedAt = DateTime.UtcNow;
+        Raise(new ExpenseVerifiedDomainEvent(Id, GroupId));
+        return Result.Success();
+    }
+
+    public Result Update(decimal amount, string category, string description, DateTime expenseDate)
+    {
+        if (IsVerified) return Result.Failure(ExpenseErrors.CannotModifyVerified);
+
         Amount = amount;
         Category = category;
         Description = description;
         ExpenseDate = expenseDate;
+        return Result.Success();
     }
 }

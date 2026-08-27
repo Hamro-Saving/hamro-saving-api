@@ -2,13 +2,12 @@ using HamroSavings.Application.Abstractions.Authentication;
 using HamroSavings.Application.Abstractions.Data;
 using HamroSavings.Application.Abstractions.Email;
 using HamroSavings.Application.Abstractions.Messaging;
-using HamroSavings.Application.Abstractions.Settings;
+using HamroSavings.Domain.Groups;
 using HamroSavings.Domain.Members;
 using HamroSavings.Domain.Users;
 using HamroSavings.SharedKernel;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 namespace HamroSavings.Application.Members.ResendInvite;
 
@@ -17,8 +16,7 @@ internal sealed class ResendInviteCommandHandler(
     IUserContext userContext,
     IPasswordHasher passwordHasher,
     IEmailService emailService,
-    ILogger<ResendInviteCommandHandler> logger,
-    IOptions<FrontendSettings> frontendSettings)
+    ILogger<ResendInviteCommandHandler> logger)
     : ICommandHandler<ResendInviteCommand>
 {
     public async Task<Result> Handle(ResendInviteCommand command, CancellationToken cancellationToken = default)
@@ -59,14 +57,20 @@ internal sealed class ResendInviteCommandHandler(
         if (user.IsActive)
             return Result.Failure(UserErrors.AlreadyActivated);
 
+        // The invite is sent in the group's name, so it has to know which group.
+        var group = await dbContext.Groups
+            .FirstOrDefaultAsync(g => g.Id == member.GroupId, cancellationToken);
+
+        if (group is null)
+            return Result.Failure(GroupErrors.NotFound(member.GroupId));
+
         var inviteToken = user.GenerateInviteToken();
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        var signupLink = $"{frontendSettings.Value.Url}/signup?token={inviteToken}";
-
         try
         {
-            await emailService.SendMemberInviteAsync(member.Email!, member.FullName, signupLink, cancellationToken);
+            await emailService.SendMemberInviteAsync(
+                new EmailRecipient(member.Email!, member.FullName), group, inviteToken, cancellationToken);
         }
         catch (Exception ex)
         {

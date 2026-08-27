@@ -1,3 +1,4 @@
+using HamroSavings.Infrastructure.DomainEvents;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
@@ -20,6 +21,6 @@ public sealed class HamroSavingsDbContextFactory : IDesignTimeDbContextFactory<H
             .UseNpgsql(configuration.GetConnectionString("HamroSavingsDb"))
             .UseSnakeCaseNamingConvention();
 
-        return new HamroSavingsDbContext(optionsBuilder.Options);
+        return new HamroSavingsDbContext(optionsBuilder.Options, new NoOpDomainEventPublisher());
     }
 }

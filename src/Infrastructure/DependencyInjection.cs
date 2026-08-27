@@ -3,6 +3,7 @@ using HamroSavings.Application.Abstractions.Data;
 using HamroSavings.Application.Abstractions.Email;
 using HamroSavings.Infrastructure.Authentication;
 using HamroSavings.Infrastructure.Database;
+using HamroSavings.Infrastructure.DomainEvents;
 using HamroSavings.Infrastructure.Email;
 using HamroSavings.Infrastructure.Time;
 using HamroSavings.SharedKernel;
@@ -21,11 +22,20 @@ public static class DependencyInjection
         this IServiceCollection services,
         IConfiguration configuration)
     {
+        services.AddDomainEvents();
         services.AddDatabase(configuration);
         services.AddAuthenticationInternal(configuration);
         services.AddAuthorizationInternal();
         services.AddServices();
         return services;
+    }
+
+    /// <summary>Singleton because it is the one place events collect, and registered before the DbContext that depends on it.</summary>
+    private static void AddDomainEvents(this IServiceCollection services)
+    {
+        services.AddSingleton<DomainEventQueue>();
+        services.AddSingleton<IDomainEventPublisher>(sp => sp.GetRequiredService<DomainEventQueue>());
+        services.AddHostedService<DomainEventProcessor>();
     }
 
     private static void AddDatabase(this IServiceCollection services, IConfiguration configuration)

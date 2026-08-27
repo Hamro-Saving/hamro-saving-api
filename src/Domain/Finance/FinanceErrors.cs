@@ -9,6 +9,12 @@ public static class ExpenseErrors
 
     public static readonly Error NotInGroup =
         Error.Forbidden("Expense.NotInGroup", "Expense does not belong to this group.");
+
+    public static readonly Error AlreadyVerified =
+        Error.Conflict("Expense.AlreadyVerified", "This expense has already been verified.");
+
+    public static readonly Error CannotModifyVerified =
+        Error.Conflict("Expense.CannotModifyVerified", "A verified expense is on the group's books and cannot be changed.");
 }
 
 public static class FixedDepositErrors
@@ -30,6 +36,18 @@ public static class FixedDepositErrors
 
     public static readonly Error WithdrawnBeforeStart =
         Error.Problem("FixedDeposit.WithdrawnBeforeStart", "A withdrawal cannot be dated before the deposit started.");
+
+    public static readonly Error AlreadyVerified =
+        Error.Conflict("FixedDeposit.AlreadyVerified", "This fixed deposit has already been verified.");
+
+    public static readonly Error NotVerified =
+        Error.Problem("FixedDeposit.NotVerified", "This fixed deposit has not been verified yet, so it cannot be withdrawn.");
+
+    public static readonly Error NotWithdrawn =
+        Error.Problem("FixedDeposit.NotWithdrawn", "This fixed deposit has not been withdrawn, so there is no withdrawal to verify.");
+
+    public static readonly Error WithdrawalAlreadyVerified =
+        Error.Conflict("FixedDeposit.WithdrawalAlreadyVerified", "This withdrawal has already been verified.");
 }
 
 public static class OtherIncomingFundErrors
@@ -45,4 +63,10 @@ public static class OtherIncomingFundErrors
 
     public static readonly Error RemarksRequired =
         Error.Validation("OtherIncomingFund.RemarksRequired", "Remarks are required — they are what says which kind of income this was.");
+
+    public static readonly Error AlreadyVerified =
+        Error.Conflict("OtherIncomingFund.AlreadyVerified", "This record has already been verified.");
+
+    public static readonly Error CannotModifyVerified =
+        Error.Conflict("OtherIncomingFund.CannotModifyVerified", "A verified record is on the group's books and cannot be changed.");
 }

@@ -96,7 +96,7 @@ public sealed class Loan : Entity
             DisbursedById = null,
             CreatedAt = DateTime.UtcNow
         };
-        loan.Raise(new LoanCreatedDomainEvent(loan.Id, loan.BorrowerId, loan.GroupId));
+        loan.Raise(new LoanRequestedDomainEvent(loan.Id, loan.GroupId, loan.BorrowerId));
         return loan;
     }
 
@@ -132,6 +132,7 @@ public sealed class Loan : Entity
     {
         if (Status != LoanStatus.Pending) return Result.Failure(LoanErrors.NotPending);
         Status = LoanStatus.Approved;
+        Raise(new LoanVoteSettledDomainEvent(Id, GroupId, BorrowerId, IsApproved: true));
         return Result.Success();
     }
 
@@ -139,6 +140,7 @@ public sealed class Loan : Entity
     {
         if (Status != LoanStatus.Pending) return Result.Failure(LoanErrors.NotPending);
         Status = LoanStatus.Declined;
+        Raise(new LoanVoteSettledDomainEvent(Id, GroupId, BorrowerId, IsApproved: false));
         return Result.Success();
     }
 
@@ -183,7 +185,7 @@ public sealed class Loan : Entity
         OutstandingPrincipal = Amount;
         UnpaidInterest = 0;
         LastAccrualDate = disbursedAt;
-        Raise(new LoanCreatedDomainEvent(Id, BorrowerId, GroupId));
+        Raise(new LoanDisbursedDomainEvent(Id, GroupId, BorrowerId));
         return Result.Success();
     }
 
@@ -286,6 +288,7 @@ public sealed class Loan : Entity
         DueDate = dueDate;
         Notes = notes;
         Status = LoanStatus.Pending;
+        Raise(new LoanRequestedDomainEvent(Id, GroupId, BorrowerId));
 
         return Result.Success();
     }

@@ -25,6 +25,10 @@ public sealed class OtherIncomingFund : Entity
     /// <summary>What this money was for. Required — see the note on the class.</summary>
     public string Remarks { get; private set; } = string.Empty;
 
+    public bool IsVerified { get; private set; }
+    public Guid? VerifiedById { get; private set; }
+    public DateTime? VerifiedAt { get; private set; }
+
     public Guid RecordedById { get; private set; }
     public DateTime CreatedAt { get; private set; }
 
@@ -44,7 +48,7 @@ public sealed class OtherIncomingFund : Entity
         if (string.IsNullOrWhiteSpace(remarks))
             return Result.Failure<OtherIncomingFund>(OtherIncomingFundErrors.RemarksRequired);
 
-        return Result.Success(new OtherIncomingFund
+        var record = new OtherIncomingFund
         {
             Id = Guid.CreateVersion7(),
             GroupId = groupId,
@@ -52,13 +56,29 @@ public sealed class OtherIncomingFund : Entity
             Amount = amount,
             PaidDate = paidDate,
             Remarks = remarks.Trim(),
+            IsVerified = false,
             RecordedById = recordedById,
             CreatedAt = DateTime.UtcNow
-        });
+        };
+        record.Raise(new OtherIncomingFundRecordedDomainEvent(record.Id, record.GroupId, record.MemberId));
+        return Result.Success(record);
+    }
+
+    public Result Verify(Guid verifiedById)
+    {
+        if (IsVerified) return Result.Failure(OtherIncomingFundErrors.AlreadyVerified);
+        IsVerified = true;
+        VerifiedById = verifiedById;
+        VerifiedAt = DateTime.UtcNow;
+        Raise(new OtherIncomingFundVerifiedDomainEvent(Id, GroupId, MemberId));
+        return Result.Success();
     }
 
     public Result Update(decimal amount, DateTime paidDate, string remarks)
     {
+        if (IsVerified)
+            return Result.Failure(OtherIncomingFundErrors.CannotModifyVerified);
+
         if (amount <= 0)
             return Result.Failure(OtherIncomingFundErrors.AmountNotPositive);
 

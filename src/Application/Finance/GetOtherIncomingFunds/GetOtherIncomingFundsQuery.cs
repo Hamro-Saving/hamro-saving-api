@@ -11,4 +11,6 @@ public sealed record OtherIncomingFundResponse(
     decimal Amount,
     DateTime PaidDate,
     string Remarks,
+    bool IsVerified,
+    DateTime? VerifiedAt,
     DateTime CreatedAt);

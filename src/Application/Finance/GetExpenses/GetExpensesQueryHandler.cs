@@ -49,7 +49,9 @@ internal sealed class GetExpensesQueryHandler(
                 e.Category,
                 e.Description,
                 e.ExpenseDate,
-                e.ApprovedById,
+                e.IsVerified,
+                e.VerifiedById,
+                e.VerifiedAt,
                 e.CreatedById,
                 e.CreatedAt))
             .ToListAsync(cancellationToken);

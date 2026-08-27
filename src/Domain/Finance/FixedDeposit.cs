@@ -13,6 +13,10 @@ public sealed class FixedDeposit : Entity
     public DateTime MaturityDate { get; private set; }
     public FixedDepositStatus Status { get; private set; }
     public string? Notes { get; private set; }
+    public bool IsVerified { get; private set; }
+    public Guid? VerifiedById { get; private set; }
+    public DateTime? VerifiedAt { get; private set; }
+
     public Guid CreatedById { get; private set; }
     public DateTime CreatedAt { get; private set; }
 
@@ -21,6 +25,14 @@ public sealed class FixedDeposit : Entity
 
     public DateTime? WithdrawnAt { get; private set; }
     public Guid? WithdrawnById { get; private set; }
+
+    /// <summary>
+    /// Checked separately from the placement: a withdrawal is a second movement of money, and
+    /// a placement approved months earlier says nothing about the interest figure.
+    /// </summary>
+    public bool IsWithdrawalVerified { get; private set; }
+    public Guid? WithdrawalVerifiedById { get; private set; }
+    public DateTime? WithdrawalVerifiedAt { get; private set; }
 
     public decimal ExpectedMaturityAmount => Amount + (Amount * InterestRate / 100);
 
@@ -48,7 +60,7 @@ public sealed class FixedDeposit : Entity
         string? notes,
         Guid createdById)
     {
-        return new FixedDeposit
+        var fixedDeposit = new FixedDeposit
         {
             Id = Guid.CreateVersion7(),
             GroupId = groupId,
@@ -59,9 +71,37 @@ public sealed class FixedDeposit : Entity
             MaturityDate = maturityDate,
             Status = FixedDepositStatus.Active,
             Notes = notes,
+            IsVerified = false,
             CreatedById = createdById,
             CreatedAt = DateTime.UtcNow
         };
+        fixedDeposit.Raise(new FixedDepositRecordedDomainEvent(fixedDeposit.Id, fixedDeposit.GroupId));
+        return fixedDeposit;
+    }
+
+    public Result Verify(Guid verifiedById)
+    {
+        if (IsVerified) return Result.Failure(FixedDepositErrors.AlreadyVerified);
+        IsVerified = true;
+        VerifiedById = verifiedById;
+        VerifiedAt = DateTime.UtcNow;
+        Raise(new FixedDepositVerifiedDomainEvent(Id, GroupId));
+        return Result.Success();
+    }
+
+    /// <summary>Kept apart from <see cref="Verify"/> so the two movements are answered for separately.</summary>
+    public Result VerifyWithdrawal(Guid verifiedById)
+    {
+        if (Status != FixedDepositStatus.Withdrawn)
+            return Result.Failure(FixedDepositErrors.NotWithdrawn);
+
+        if (IsWithdrawalVerified) return Result.Failure(FixedDepositErrors.WithdrawalAlreadyVerified);
+
+        IsWithdrawalVerified = true;
+        WithdrawalVerifiedById = verifiedById;
+        WithdrawalVerifiedAt = DateTime.UtcNow;
+        Raise(new FixedDepositWithdrawalVerifiedDomainEvent(Id, GroupId));
+        return Result.Success();
     }
 
     public void MarkAsMatured() => Status = FixedDepositStatus.Matured;
@@ -75,6 +115,10 @@ public sealed class FixedDeposit : Entity
         if (Status == FixedDepositStatus.Withdrawn)
             return Result.Failure(FixedDepositErrors.AlreadyWithdrawn);
 
+        // Otherwise the return posts against a placement the ledger has never heard of.
+        if (!IsVerified)
+            return Result.Failure(FixedDepositErrors.NotVerified);
+
         if (interestEarned < 0)
             return Result.Failure(FixedDepositErrors.NegativeInterest);
 
@@ -85,6 +129,8 @@ public sealed class FixedDeposit : Entity
         InterestEarned = interestEarned;
         WithdrawnAt = withdrawnAt;
         WithdrawnById = withdrawnById;
+        IsWithdrawalVerified = false;
+        Raise(new FixedDepositWithdrawalRecordedDomainEvent(Id, GroupId));
         return Result.Success();
     }
 }

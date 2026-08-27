@@ -10,6 +10,7 @@ internal sealed class SmtpEmailService(IConfiguration configuration) : IEmailSen
 {
     public async Task SendAsync(
         string recipient,
+        string fromName,
         string subject,
         string? htmlBody = null,
         string? textBody = null,
@@ -19,11 +20,13 @@ internal sealed class SmtpEmailService(IConfiguration configuration) : IEmailSen
         var port = int.Parse(configuration["Email:SmtpPort"] ?? "587");
         var username = configuration["Email:Username"] ?? throw new InvalidOperationException("Email:Username is not configured.");
         var password = configuration["Email:Password"] ?? throw new InvalidOperationException("Email:Password is not configured.");
-        var fromName = configuration["Email:FromName"] ?? "HamroSavings";
-        var fromAddress = configuration["Email:FromAddress"] ?? username;
+        var baseAddress = configuration["Email:FromAddress"] ?? username;
 
         var message = new MimeMessage();
-        message.From.Add(new MailboxAddress(fromName, fromAddress));
+        // MimeKit quotes the display name, so admin-typed text cannot forge a header.
+        message.From.Add(new MailboxAddress(
+            SenderIdentity.DisplayName(fromName),
+            SenderIdentity.Address(fromName, baseAddress)));
         message.To.Add(new MailboxAddress(recipient, recipient));
         message.Subject = subject;
         message.Body = new BodyBuilder { HtmlBody = htmlBody, TextBody = textBody }.ToMessageBody();
