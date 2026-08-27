@@ -18,7 +18,7 @@ public sealed class ForceDisburseLoan : IEndpoint
             ICommandHandler<ForceDisburseLoanCommand> handler,
             CancellationToken ct) =>
         {
-            var result = await handler.Handle(new ForceDisburseLoanCommand(id, request?.DisbursedOn), ct);
+            var result = await handler.Handle(new ForceDisburseLoanCommand(id, request?.DisbursedOn, request?.DisbursedAmount), ct);
             return result.Match(
                 () => Results.NoContent(),
                 error => CustomResults.Problem(error));

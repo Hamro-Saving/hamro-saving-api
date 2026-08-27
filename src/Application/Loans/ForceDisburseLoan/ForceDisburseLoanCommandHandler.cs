@@ -34,8 +34,8 @@ internal sealed class ForceDisburseLoanCommandHandler(
         if (!userContext.CanWrite(loan.GroupId))
             return Result.Failure(LoanErrors.NotInGroup);
 
-        var totalVoters = await LoanVoting.EligibleVoters(dbContext)
-            .CountAsync(m => m.GroupId == loan.GroupId, cancellationToken);
+        var totalVoters = await LoanVoting.VotersOn(dbContext, loan.GroupId, loan.BorrowerId)
+            .CountAsync(cancellationToken);
 
         var declines = await dbContext.LoanApprovals
             .CountAsync(a => a.LoanId == loan.Id && !a.IsApproved, cancellationToken);
@@ -49,7 +49,7 @@ internal sealed class ForceDisburseLoanCommandHandler(
             ? on.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc)
             : DateTime.UtcNow;
 
-        var result = loan.ForceDisbursement(userContext.UserId, disbursedAt, inHand, votes);
+        var result = loan.ForceDisbursement(userContext.UserId, disbursedAt, inHand, votes, command.DisbursedAmount);
         if (result.IsFailure) return result;
 
         dbContext.PostLoanDisbursement(loan.GroupId, loan.Id, loan.BorrowerId, loan.Amount,

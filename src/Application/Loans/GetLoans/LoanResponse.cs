@@ -11,6 +11,8 @@ public sealed record LoanResponse(
     string BorrowerType,
     Guid GroupId,
     decimal Amount,
+    /// <summary>What the members carried. Above Amount when the payout came up short.</summary>
+    decimal RequestedAmount,
     decimal InterestRate,
     // Live ledger: principal still owed, interest run to today, and what would clear it now
     decimal OutstandingPrincipal,

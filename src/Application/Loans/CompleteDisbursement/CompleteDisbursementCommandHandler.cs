@@ -36,7 +36,7 @@ internal sealed class CompleteDisbursementCommandHandler(
             ? on.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc)
             : DateTime.UtcNow;
 
-        var result = loan.CompleteDisbursement(userContext.UserId, disbursedAt, inHand);
+        var result = loan.CompleteDisbursement(userContext.UserId, disbursedAt, inHand, command.DisbursedAmount);
         if (result.IsFailure) return result;
 
         dbContext.PostLoanDisbursement(loan.GroupId, loan.Id, loan.BorrowerId, loan.Amount,

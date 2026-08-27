@@ -164,4 +164,27 @@ public class ForceDisbursementTests
         Assert.True(result.IsFailure);
         Assert.Equal(LoanErrors.CannotForceDisburse, result.Error);
     }
+
+    [Fact]
+    public void ForceDisbursingShortBecomesTheLoan()
+    {
+        var loan = NewLoan();
+
+        var result = loan.ForceDisbursement(Guid.NewGuid(), Start, Funded, Votes(0), 40_000m);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(40_000m, loan.Amount);
+        Assert.Equal(40_000m, loan.OutstandingPrincipal);
+    }
+
+    [Fact]
+    public void ForceDisbursingMoreThanWasAskedIsRefused()
+    {
+        var loan = NewLoan();
+
+        var result = loan.ForceDisbursement(Guid.NewGuid(), Start, Funded, Votes(0), 150_000m);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Loan.DisbursedAmountExceedsRequest", result.Error.Code);
+    }
 }

@@ -174,6 +174,102 @@ public class LoanLifecycleTests
     }
 
     [Fact]
+    public void AShortDisbursementBecomesTheLoan()
+    {
+        var loan = NewLoan();
+        loan.ApproveLoan();
+
+        // The group only had 60,000 to hand over against a 100,000 request. What left is
+        // what is owed back, so the loan is now a 60,000 loan.
+        var result = loan.CompleteDisbursement(Guid.NewGuid(), Start, Funded, 60_000m);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(60_000m, loan.Amount);
+        Assert.Equal(60_000m, loan.OutstandingPrincipal);
+        // The members carried 100,000, and the record still says so.
+        Assert.Equal(100_000m, loan.RequestedAmount);
+        Assert.True(loan.WasReducedAtDisbursement);
+    }
+
+    [Fact]
+    public void AFullDisbursementIsNotAReduction()
+    {
+        var loan = NewLoan();
+        loan.ApproveLoan();
+
+        loan.CompleteDisbursement(Guid.NewGuid(), Start, Funded);
+
+        Assert.Equal(100_000m, loan.RequestedAmount);
+        Assert.False(loan.WasReducedAtDisbursement);
+    }
+
+    [Fact]
+    public void RevisingBeforePayoutMovesWhatWasAskedFor()
+    {
+        var loan = NewLoan();
+
+        // Still a request at this point, so changing it changes what the group is being
+        // asked for — this is not a reduction, and must not read as one.
+        loan.Revise(70_000m, 18m, Start, null, null);
+
+        Assert.Equal(70_000m, loan.Amount);
+        Assert.Equal(70_000m, loan.RequestedAmount);
+        Assert.False(loan.WasReducedAtDisbursement);
+    }
+
+    [Fact]
+    public void DisbursingMoreThanWasApprovedIsRefused()
+    {
+        var loan = NewLoan();
+        loan.ApproveLoan();
+
+        var result = loan.CompleteDisbursement(Guid.NewGuid(), Start, Funded, 120_000m);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Loan.DisbursedAmountExceedsRequest", result.Error.Code);
+        // The loan is untouched — still approved, still waiting, still 100,000.
+        Assert.Equal(LoanStatus.Approved, loan.Status);
+        Assert.Equal(100_000m, loan.Amount);
+    }
+
+    [Fact]
+    public void DisbursingNothingIsRefused()
+    {
+        var loan = NewLoan();
+        loan.ApproveLoan();
+
+        var result = loan.CompleteDisbursement(Guid.NewGuid(), Start, Funded, 0m);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Loan.DisbursedAmountNotPositive", result.Error.Code);
+    }
+
+    [Fact]
+    public void OmittingTheAmountDisbursesTheWholeLoan()
+    {
+        var loan = NewLoan();
+        loan.ApproveLoan();
+
+        Assert.True(loan.CompleteDisbursement(Guid.NewGuid(), Start, Funded).IsSuccess);
+        Assert.Equal(100_000m, loan.Amount);
+        Assert.Equal(100_000m, loan.OutstandingPrincipal);
+    }
+
+    [Fact]
+    public void AShortDisbursementIsCheckedAgainstCashActuallyHeld()
+    {
+        var loan = NewLoan();
+        loan.ApproveLoan();
+
+        // 100,000 was asked for and the group holds only 60,000 — but it is handing over
+        // 60,000, so the payout goes through on the figure that actually moves.
+        var result = loan.CompleteDisbursement(Guid.NewGuid(), Start, new CashInHand(60_000m), 60_000m);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(60_000m, loan.Amount);
+    }
+
+    [Fact]
     public void RevisingMovesTheStartDate()
     {
         var loan = NewLoan();

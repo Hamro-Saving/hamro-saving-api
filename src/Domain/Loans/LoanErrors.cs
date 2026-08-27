@@ -43,6 +43,15 @@ public static class LoanErrors
     public static readonly Error NotApproved =
         Error.Problem("Loan.NotApproved", "Loan must be approved by the members before it can be disbursed.");
 
+    public static readonly Error DisbursedAmountNotPositive =
+        Error.Validation("Loan.DisbursedAmountNotPositive", "The disbursed amount must be greater than zero.");
+
+    /// <summary>The group can hand over less than was asked for, but never more.</summary>
+    public static Error DisbursedAmountExceedsRequest(decimal disbursed, decimal requested) =>
+        Error.Validation(
+            "Loan.DisbursedAmountExceedsRequest",
+            $"Cannot disburse {disbursed:N0}: this loan was only approved for {requested:N0}.");
+
     public static readonly Error DisbursementInFuture =
         Error.Validation("Loan.DisbursementInFuture", "A loan cannot be disbursed on a future date.");
 

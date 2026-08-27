@@ -15,7 +15,8 @@ public class LoanResponseTests
 
         return new LoanResponse(
             Guid.NewGuid(), Guid.NewGuid(), "Walk In", "NonMember", Guid.NewGuid(),
-            50_000m, 18m, 50_000m, 100m, 50_100m, 25m, 100m, 0m, 0m,
+            // Approved for 60,000, paid out at 50,000 — a reduced loan, so the two figures differ.
+            50_000m, 60_000m, 18m, 50_000m, 100m, 50_100m, 25m, 100m, 0m, 0m,
             DateTime.UtcNow, DateTime.UtcNow, DateTime.UtcNow, null,
             LoanStatus.Active, "notes", Guid.NewGuid(),
             IsForceDisbursed: true,
@@ -32,6 +33,8 @@ public class LoanResponseTests
         var stripped = full.WithoutGroupInternals();
 
         Assert.Equal(full.Amount, stripped.Amount);
+        // What the loan was approved for is a term of the loan, not the group's deliberation.
+        Assert.Equal(full.RequestedAmount, stripped.RequestedAmount);
         Assert.Equal(full.InterestRate, stripped.InterestRate);
         Assert.Equal(full.OutstandingPrincipal, stripped.OutstandingPrincipal);
         Assert.Equal(full.PayoffAmount, stripped.PayoffAmount);

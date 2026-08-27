@@ -21,6 +21,16 @@ public sealed class Loan : Entity
     public Guid GroupId { get; private set; }
     public decimal Amount { get; private set; }
     public decimal InterestRate { get; private set; }
+    /// <summary>
+    /// What the members actually carried. <see cref="Amount"/> is what the loan is now, which
+    /// a short disbursement rewrites; this keeps the figure that was asked for and voted on,
+    /// so a loan paid out below its request still shows what the group agreed to.
+    /// </summary>
+    public decimal RequestedAmount { get; private set; }
+
+    /// <summary>Whether less was handed over than the members approved.</summary>
+    public bool WasReducedAtDisbursement => Amount < RequestedAmount;
+
     public DateTime StartDate { get; private set; }
     public DateTime? DueDate { get; private set; }
     public LoanStatus Status { get; private set; }
@@ -77,6 +87,7 @@ public sealed class Loan : Entity
             BorrowerType = borrowerType,
             GroupId = groupId,
             Amount = amount,
+            RequestedAmount = amount,
             InterestRate = interestRate,
             StartDate = startDate,
             DueDate = dueDate,
@@ -132,9 +143,24 @@ public sealed class Loan : Entity
     }
 
     /// <summary>Money is with the borrower — the loan starts running and interest starts here.</summary>
-    public Result CompleteDisbursement(Guid disbursedById, DateTime disbursedAt, CashInHand available)
+    /// <param name="disbursedAmount">
+    /// What actually left the group. Null means the whole figure asked for, which is the
+    /// ordinary case. Less is allowed and rewrites the loan; more is not.
+    /// </param>
+    public Result CompleteDisbursement(Guid disbursedById, DateTime disbursedAt, CashInHand available, decimal? disbursedAmount = null)
     {
         if (Status != LoanStatus.Approved) return Result.Failure(LoanErrors.NotApproved);
+
+        var paidOut = disbursedAmount ?? Amount;
+
+        if (paidOut <= 0)
+            return Result.Failure(LoanErrors.DisbursedAmountNotPositive);
+
+        // Handing over less than was asked is the group's call to make — a short payout simply
+        // becomes the loan. Handing over more is not: the members carried a figure, and anything
+        // above it was never agreed to by anyone.
+        if (paidOut > Amount + Tolerance)
+            return Result.Failure(LoanErrors.DisbursedAmountExceedsRequest(paidOut, Amount));
 
         // The payout can be backdated — a loan the group made before it kept records here is
         // entered after the fact — but it cannot be dated forward: interest would run from a
@@ -144,9 +170,13 @@ public sealed class Loan : Entity
 
         // This is the moment the money actually leaves, so it is the moment that matters:
         // the group may have had it when the loan was approved and not when it is paid out.
-        var covered = available.EnsureCovers(Amount);
+        var covered = available.EnsureCovers(paidOut);
         if (covered.IsFailure) return covered;
 
+        // What left the group is what is owed back, so a short payout is the loan from here on.
+        // RequestedAmount deliberately stays where it was: the record should still show what
+        // the members agreed to, not quietly restate it as the smaller figure.
+        Amount = paidOut;
         Status = LoanStatus.Active;
         DisbursedById = disbursedById;
         DisbursedAt = disbursedAt;
@@ -163,7 +193,7 @@ public sealed class Loan : Entity
     /// vote that was answered. A group that has refused the loan keeps its refusal, and the
     /// cash rule binds an admin exactly as it binds anyone else.
     /// </summary>
-    public Result ForceDisbursement(Guid disbursedById, DateTime disbursedAt, CashInHand available, LoanVoteTally votes)
+    public Result ForceDisbursement(Guid disbursedById, DateTime disbursedAt, CashInHand available, LoanVoteTally votes, decimal? disbursedAmount = null)
     {
         if (Status is not (LoanStatus.Pending or LoanStatus.Approved))
             return Result.Failure(LoanErrors.CannotForceDisburse);
@@ -174,12 +204,12 @@ public sealed class Loan : Entity
         if (disbursedAt.Date > DateTime.UtcNow.Date)
             return Result.Failure(LoanErrors.DisbursementInFuture);
 
-        var covered = available.EnsureCovers(Amount);
+        var covered = available.EnsureCovers(disbursedAmount ?? Amount);
         if (covered.IsFailure) return covered;
 
         IsForceDisbursed = Status == LoanStatus.Pending;
         Status = LoanStatus.Approved;
-        return CompleteDisbursement(disbursedById, disbursedAt, available);
+        return CompleteDisbursement(disbursedById, disbursedAt, available, disbursedAmount);
     }
 
     /// <summary>
@@ -246,6 +276,9 @@ public sealed class Loan : Entity
             return Result.Failure(LoanErrors.CannotModifyAfterDisbursement);
 
         Amount = amount;
+        // A revision is a new request, put back to the group — so this moves with it. Only a
+        // short disbursement parts the two.
+        RequestedAmount = amount;
         InterestRate = interestRate;
         // Safe to move: interest runs from DisbursedAt, and a revision is only possible
         // before the money leaves the group, so nothing has accrued against this date yet.

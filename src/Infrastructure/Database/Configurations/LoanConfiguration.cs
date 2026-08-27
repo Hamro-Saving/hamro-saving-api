@@ -18,6 +18,10 @@ internal sealed class LoanConfiguration : IEntityTypeConfiguration<Loan>
             .IsRequired()
             .HasPrecision(18, 2);
 
+        builder.Property(l => l.RequestedAmount)
+            .IsRequired()
+            .HasPrecision(18, 2);
+
         builder.Property(l => l.InterestRate)
             .IsRequired()
             .HasPrecision(5, 2);
@@ -40,5 +44,6 @@ internal sealed class LoanConfiguration : IEntityTypeConfiguration<Loan>
 
         // Interest between transactions is computed, never stored
         builder.Ignore(l => l.DailyInterest);
+        builder.Ignore(l => l.WasReducedAtDisbursement);
     }
 }

@@ -82,6 +82,38 @@ public class LoanVotingTests
         Assert.True((double)(needed - 1) / voters < 0.5);
     }
 
+    [Theory]
+    [InlineData(2, 1)]
+    [InlineData(3, 2)]
+    [InlineData(4, 2)]
+    [InlineData(5, 3)]
+    [InlineData(6, 3)]
+    [InlineData(7, 4)]
+    public void AMemberBorrowingIsLeftOutOfTheirOwnVote(int groupMembers, int needed)
+    {
+        // The borrower is refused a vote on their own request, so they are not part of the
+        // total that decides it either. The threshold is a majority of everyone else.
+        Assert.Equal(needed, LoanVoting.ApprovalsNeeded(groupMembers - 1));
+    }
+
+    [Fact]
+    public void CountingTheBorrowerUsedToDemandUnanimity()
+    {
+        // A group of four with one member borrowing has three people who can vote. Measuring
+        // against all four asked for three approvals — every last one of them — because the
+        // borrower's own uncastable vote was still sitting in the total.
+        Assert.Equal(3, LoanVoting.ApprovalsNeeded(4));
+        Assert.Equal(2, LoanVoting.ApprovalsNeeded(3));
+    }
+
+    [Fact]
+    public void ANonMemberBorrowingCostsTheGroupNoVoters()
+    {
+        // A non-member is not an eligible voter, so a loan to one has nobody to leave out:
+        // all four members still decide it, and the bar stays where it was.
+        Assert.Equal(3, LoanVoting.ApprovalsNeeded(4));
+    }
+
     [Fact]
     public void CountingAdminsAsVotersRaisesTheBarForApproval()
     {

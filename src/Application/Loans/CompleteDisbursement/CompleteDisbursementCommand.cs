@@ -6,4 +6,7 @@ namespace HamroSavings.Application.Loans.CompleteDisbursement;
 /// The day the money reached the borrower. Null means today — the ordinary case — while a past
 /// date lets a loan the group made earlier be entered with its interest running from then.
 /// </param>
-public sealed record CompleteDisbursementCommand(Guid LoanId, DateOnly? DisbursedOn = null) : ICommand;
+/// <param name="DisbursedAmount">
+/// What actually left the group. Null means the full amount the loan was approved for.
+/// </param>
+public sealed record CompleteDisbursementCommand(Guid LoanId, DateOnly? DisbursedOn = null, decimal? DisbursedAmount = null) : ICommand;

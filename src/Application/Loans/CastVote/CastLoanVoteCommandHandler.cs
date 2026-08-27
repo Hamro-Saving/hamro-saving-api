@@ -51,8 +51,8 @@ internal sealed class CastLoanVoteCommandHandler(
         // Save the vote, then check whether it tips the balance
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        var totalVoters = await LoanVoting.EligibleVoters(dbContext)
-            .CountAsync(m => m.GroupId == loan.GroupId, cancellationToken);
+        var totalVoters = await LoanVoting.VotersOn(dbContext, loan.GroupId, loan.BorrowerId)
+            .CountAsync(cancellationToken);
 
         var matchingVotes = await dbContext.LoanApprovals
             .CountAsync(a => a.LoanId == command.LoanId && a.IsApproved == command.IsApproved, cancellationToken);

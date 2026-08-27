@@ -78,14 +78,20 @@ internal sealed class GetLoansQueryHandler(
             .GroupBy(a => a.LoanId)
             .ToDictionary(g => g.Key, g => g.ToList());
 
-        // Every loan needs a majority of its own group's voters, so count per group.
+        // Every loan needs a majority of its own group's voters, so count per group. The ids
+        // come back too: a loan's denominator leaves out its borrower, and only the eligible
+        // set can say whether that borrower was ever counted in it.
         var groupIds = loans.Select(l => l.GroupId).Distinct().ToList();
-        var voterCountByGroup = (await LoanVoting.EligibleVoters(dbContext)
+        var eligibleVoters = await LoanVoting.EligibleVoters(dbContext)
             .Where(m => groupIds.Contains(m.GroupId))
+            .Select(m => new { m.Id, m.GroupId })
+            .ToListAsync(cancellationToken);
+
+        var voterCountByGroup = eligibleVoters
             .GroupBy(m => m.GroupId)
-            .Select(g => new { GroupId = g.Key, Count = g.Count() })
-            .ToListAsync(cancellationToken))
-            .ToDictionary(x => x.GroupId, x => x.Count);
+            .ToDictionary(g => g.Key, g => g.Count());
+
+        var eligibleVoterIds = eligibleVoters.Select(m => m.Id).ToHashSet();
 
         var borrowerDict = allBorrowers.ToDictionary(m => m.Id, m => m.Name);
 
@@ -104,7 +110,10 @@ internal sealed class GetLoansQueryHandler(
                 .Select(v => new ApproverInfo(v.ApproverId, voterDict.GetValueOrDefault(v.ApproverId, "Unknown"), v.ApprovedAt))
                 .ToList();
 
-            var voterCount = voterCountByGroup.GetValueOrDefault(l.GroupId, 0);
+            // The borrower never votes on their own request, so they are not part of the
+            // total that decides it. A non-member borrower was never in the set to subtract.
+            var voterCount = voterCountByGroup.GetValueOrDefault(l.GroupId, 0)
+                - (eligibleVoterIds.Contains(l.BorrowerId) ? 1 : 0);
             var requiredApprovals = LoanVoting.ApprovalsNeeded(voterCount);
             var requiredDeclines = LoanVoting.DeclinesNeeded(voterCount);
 
@@ -115,6 +124,7 @@ internal sealed class GetLoansQueryHandler(
                 l.BorrowerType,
                 l.GroupId,
                 l.Amount,
+                l.RequestedAmount,
                 l.InterestRate,
                 l.OutstandingPrincipal,
                 l.InterestAccruedAsOf(now),

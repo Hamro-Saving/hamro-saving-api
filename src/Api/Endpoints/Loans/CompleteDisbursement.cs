@@ -18,7 +18,7 @@ public sealed class CompleteDisbursement : IEndpoint
             ICommandHandler<CompleteDisbursementCommand> handler,
             CancellationToken ct) =>
         {
-            var result = await handler.Handle(new CompleteDisbursementCommand(id, request?.DisbursedOn), ct);
+            var result = await handler.Handle(new CompleteDisbursementCommand(id, request?.DisbursedOn, request?.DisbursedAmount), ct);
             return result.Match(
                 () => Results.NoContent(),
                 error => CustomResults.Problem(error));
@@ -30,4 +30,5 @@ public sealed class CompleteDisbursement : IEndpoint
 }
 
 /// <param name="DisbursedOn">The day the money reached the borrower. Omit for today.</param>
-public sealed record DisburseRequest(DateOnly? DisbursedOn);
+/// <param name="DisbursedAmount">What was handed over. Omit for the full approved amount.</param>
+public sealed record DisburseRequest(DateOnly? DisbursedOn, decimal? DisbursedAmount);
