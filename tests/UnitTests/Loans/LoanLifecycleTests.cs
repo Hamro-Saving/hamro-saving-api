@@ -139,7 +139,7 @@ public class LoanLifecycleTests
         var loan = NewLoan();
         loan.ApproveLoan();
 
-        var result = loan.Revise(50_000m, 12m, null, null);
+        var result = loan.Revise(50_000m, 12m, Start, null, null);
 
         Assert.True(result.IsSuccess);
         Assert.Equal(50_000m, loan.Amount);
@@ -153,7 +153,7 @@ public class LoanLifecycleTests
 
         // The group approved 100,000. This is a different loan, so their approval
         // cannot carry over to it.
-        loan.Revise(500_000m, 18m, null, null);
+        loan.Revise(500_000m, 18m, Start, null, null);
 
         Assert.Equal(LoanStatus.Pending, loan.Status);
         Assert.Equal(500_000m, loan.Amount);
@@ -167,10 +167,22 @@ public class LoanLifecycleTests
 
         // Nothing about the money moved, but the loan was still edited, and there is
         // no way to know whether a voter would still agree. They look again.
-        loan.Revise(100_000m, 18m, Start.AddMonths(6), "corrected reference");
+        loan.Revise(100_000m, 18m, Start, Start.AddMonths(6), "corrected reference");
 
         Assert.Equal(LoanStatus.Pending, loan.Status);
         Assert.Equal("corrected reference", loan.Notes);
+    }
+
+    [Fact]
+    public void RevisingMovesTheStartDate()
+    {
+        var loan = NewLoan();
+        var postponed = Start.AddMonths(1);
+
+        var result = loan.Revise(100_000m, 18m, postponed, null, null);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(postponed, loan.StartDate);
     }
 
     [Fact]
@@ -180,7 +192,7 @@ public class LoanLifecycleTests
         loan.ApproveLoan();
         loan.CompleteDisbursement(Guid.NewGuid(), Start, Funded);
 
-        var result = loan.Revise(50_000m, 12m, null, null);
+        var result = loan.Revise(50_000m, 12m, Start, null, null);
 
         Assert.True(result.IsFailure);
         Assert.Equal("Loan.CannotModifyAfterDisbursement", result.Error.Code);

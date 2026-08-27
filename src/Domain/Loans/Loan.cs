@@ -240,13 +240,16 @@ public sealed class Loan : Entity
     /// once it has been changed there is no way to know whether that voter would still
     /// agree. The caller clears the votes to match.
     /// </summary>
-    public Result Revise(decimal amount, decimal interestRate, DateTime? dueDate, string? notes)
+    public Result Revise(decimal amount, decimal interestRate, DateTime startDate, DateTime? dueDate, string? notes)
     {
         if (Status is not (LoanStatus.Pending or LoanStatus.Approved))
             return Result.Failure(LoanErrors.CannotModifyAfterDisbursement);
 
         Amount = amount;
         InterestRate = interestRate;
+        // Safe to move: interest runs from DisbursedAt, and a revision is only possible
+        // before the money leaves the group, so nothing has accrued against this date yet.
+        StartDate = startDate;
         DueDate = dueDate;
         Notes = notes;
         Status = LoanStatus.Pending;

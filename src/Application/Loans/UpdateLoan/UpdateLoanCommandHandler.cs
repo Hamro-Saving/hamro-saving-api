@@ -48,7 +48,7 @@ internal sealed class UpdateLoanCommandHandler(
         var covered = inHand.EnsureCovers(command.Amount);
         if (covered.IsFailure) return covered;
 
-        var result = loan.Revise(command.Amount, interestRate, command.DueDate, command.Notes);
+        var result = loan.Revise(command.Amount, interestRate, command.StartDate, command.DueDate, command.Notes);
         if (result.IsFailure)
             return result;
 
