@@ -16,7 +16,10 @@ internal sealed record LoadedMembership(Member Member, Group Group)
 
 internal static class MembershipLoader
 {
-    /// <summary>Every active membership this person holds, oldest first.</summary>
+    /// <summary>
+    /// Every active membership this person holds, oldest first. Deactivating anyone — member
+    /// or non-member — stops their membership being loaded, so the token stops carrying it.
+    /// </summary>
     public static async Task<List<LoadedMembership>> LoadMembershipsAsync(
         this IApplicationDbContext dbContext,
         Guid userId,

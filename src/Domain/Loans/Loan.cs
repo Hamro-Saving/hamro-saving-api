@@ -266,6 +266,31 @@ public sealed class Loan : Entity
     }
 
     /// <summary>
+    /// Puts the loan back to the moment the money left the group, so its payments can be
+    /// applied again from a clean position.
+    ///
+    /// A payment is not a standalone record: it settles the interest that had run up to its
+    /// date, and everything after it was worked out from the position it left behind. So
+    /// correcting or removing one cannot be undone in place — the loan is wound back to
+    /// disbursement and the payments it still has are replayed over it.
+    /// </summary>
+    public Result RewindToDisbursement()
+    {
+        if (DisbursedAt is null) return Result.Failure(LoanErrors.NotDisbursed);
+
+        OutstandingPrincipal = Amount;
+        UnpaidInterest = 0;
+        LastAccrualDate = DisbursedAt;
+        TotalInterestAccrued = 0;
+        TotalInterestPaid = 0;
+        TotalPrincipalPaid = 0;
+        // A loan that had been paid off may not be any more, so it goes back to running.
+        // Overdue is kept: the due date has not moved, so neither has that judgement.
+        Status = Status == LoanStatus.Overdue ? LoanStatus.Overdue : LoanStatus.Active;
+        return Result.Success();
+    }
+
+    /// <summary>
     /// Revises the loan before it is disbursed, by the borrower or an admin.
     ///
     /// Any revision returns it to Pending: a vote was cast on the loan as it stood, and

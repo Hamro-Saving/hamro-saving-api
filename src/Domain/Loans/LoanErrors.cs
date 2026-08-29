@@ -25,6 +25,19 @@ public static class LoanErrors
     public static readonly Error PaymentAlreadyVerified =
         Error.Conflict("LoanPayment.AlreadyVerified", "This payment has already been verified.");
 
+    public static readonly Error CannotModifyVerifiedPayment =
+        Error.Conflict("LoanPayment.CannotModifyVerified", "This payment has been verified and is in the group's books, so it can no longer be changed or removed.");
+
+    /// <summary>
+    /// Replaying the loan would move a payment that is already posted, so the correction is
+    /// refused rather than left to disagree with the books.
+    /// </summary>
+    public static readonly Error VerifiedPaymentAfter =
+        Error.Conflict("LoanPayment.VerifiedPaymentAfter", "A later payment on this loan has already been verified, so this one can no longer be changed.");
+
+    public static readonly Error NotDisbursed =
+        Error.Problem("Loan.NotDisbursed", "This loan has not been disbursed, so it has no payments to settle.");
+
     public static readonly Error CannotDeleteUnlessCancelled =
         Error.Conflict("Loan.CannotDeleteUnlessCancelled", "Only a cancelled loan can be deleted.");
 

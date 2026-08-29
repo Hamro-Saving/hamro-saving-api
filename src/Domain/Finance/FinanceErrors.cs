@@ -40,6 +40,9 @@ public static class FixedDepositErrors
     public static readonly Error AlreadyVerified =
         Error.Conflict("FixedDeposit.AlreadyVerified", "This fixed deposit has already been verified.");
 
+    public static readonly Error CannotModifyVerified =
+        Error.Conflict("FixedDeposit.CannotModifyVerified", "A verified fixed deposit is on the group's books and cannot be changed or removed.");
+
     public static readonly Error NotVerified =
         Error.Problem("FixedDeposit.NotVerified", "This fixed deposit has not been verified yet, so it cannot be withdrawn.");
 

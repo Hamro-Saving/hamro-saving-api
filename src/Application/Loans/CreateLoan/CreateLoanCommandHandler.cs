@@ -38,35 +38,34 @@ internal sealed class CreateLoanCommandHandler(
             return Result.Failure<Guid>(GroupErrors.NotFound(groupId));
         }
 
-        decimal interestRate;
-        if (command.BorrowerType == "Member")
-        {
-            var memberExists = await dbContext.Members
-                .AnyAsync(m => m.Id == command.BorrowerId && m.GroupId == groupId, cancellationToken);
-            if (!memberExists)
-            {
-                return Result.Failure<Guid>(MemberErrors.NotFound(command.BorrowerId));
-            }
-            // Only admins may override the group default rate
-            var effectiveRate = (userContext.IsGroupAdmin) ? command.InterestRate : null;
-            interestRate = effectiveRate ?? group.MemberInterestRate;
-        }
-        else if (command.BorrowerType == "NonMember")
-        {
-            var nonMemberExists = await dbContext.Members
-                .AnyAsync(nm => nm.Id == command.BorrowerId && nm.GroupId == groupId && nm.GroupRole == Domain.Members.GroupRole.NonMember, cancellationToken);
-            if (!nonMemberExists)
-            {
-                return Result.Failure<Guid>(MemberErrors.NotFound(command.BorrowerId));
-            }
-            // Only admins may override the group default rate
-            var effectiveRate = (userContext.IsGroupAdmin) ? command.InterestRate : null;
-            interestRate = effectiveRate ?? group.NonMemberInterestRate;
-        }
-        else
+        if (command.BorrowerType is not ("Member" or "NonMember"))
         {
             return Result.Failure<Guid>(Error.Validation("Loan.InvalidBorrowerType", "BorrowerType must be 'Member' or 'NonMember'."));
         }
+
+        var lendingToNonMember = command.BorrowerType == "NonMember";
+
+        var borrower = await dbContext.Members
+            .FirstOrDefaultAsync(m => m.Id == command.BorrowerId && m.GroupId == groupId, cancellationToken);
+
+        // The role has to match the one being claimed, or the loan would be priced at the
+        // other one's rate.
+        if (borrower is null || (borrower.GroupRole == GroupRole.NonMember) != lendingToNonMember)
+        {
+            return Result.Failure<Guid>(MemberErrors.NotFound(command.BorrowerId));
+        }
+
+        // Deactivating someone is the group saying it will not lend to them again — which for
+        // a non-member, who has no standing in the group to lose, is the whole of what it means.
+        if (!borrower.IsActive)
+        {
+            return Result.Failure<Guid>(MemberErrors.InactiveBorrower);
+        }
+
+        // Only admins may override the group default rate
+        var effectiveRate = userContext.IsGroupAdmin ? command.InterestRate : null;
+        var interestRate = effectiveRate
+            ?? (lendingToNonMember ? group.NonMemberInterestRate : group.MemberInterestRate);
 
 
         // The rule about what the group may commit lives on CashInHand; the balance is

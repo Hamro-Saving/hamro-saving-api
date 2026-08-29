@@ -65,6 +65,42 @@ public sealed class LoanPayment : Entity
         : allocation.InterestPaid > 0 ? LoanPaymentType.Interest
         : LoanPaymentType.Principal;
 
+    /// <summary>
+    /// Corrects what the payer is recorded as having handed over. Only while unverified: once
+    /// verified the money is in the group's books, and a ledger entry is corrected by an
+    /// opposite entry rather than by rewriting what it refers to.
+    ///
+    /// The derived figures are deliberately left alone — the loan settles them when the
+    /// payment is applied again, through <see cref="Restate"/>.
+    /// </summary>
+    public Result Revise(DateTime paidDate, decimal principalAmount, decimal interestAmount, string? notes)
+    {
+        if (IsVerified) return Result.Failure(LoanErrors.CannotModifyVerifiedPayment);
+
+        PaidDate = paidDate;
+        PrincipalAmount = principalAmount;
+        InterestAmount = interestAmount;
+        Notes = notes;
+        return Result.Success();
+    }
+
+    /// <summary>
+    /// Writes back what the loan made of this payment once it has been applied again. Called
+    /// for every payment of a replay, including ones already verified: their position is
+    /// recomputed from the same inputs, so it lands exactly where it was.
+    /// </summary>
+    public void Restate(LoanPaymentAllocation allocation)
+    {
+        Amount = allocation.PrincipalPaid + allocation.InterestPaid;
+        PrincipalAmount = allocation.PrincipalPaid;
+        InterestAmount = allocation.InterestPaid;
+        PaymentType = TypeOf(allocation);
+        InterestOwedBefore = allocation.InterestOwedBefore;
+        DaysAccrued = allocation.DaysAccrued;
+        OutstandingPrincipalAfter = allocation.OutstandingPrincipalAfter;
+        UnpaidInterestAfter = allocation.UnpaidInterestAfter;
+    }
+
     public Result Verify(Guid verifiedById)
     {
         if (IsVerified) return Result.Failure(LoanErrors.PaymentAlreadyVerified);
