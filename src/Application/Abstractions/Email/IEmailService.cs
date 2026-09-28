@@ -20,6 +20,16 @@ public interface IEmailService
     /// </param>
     Task SendMemberInviteAsync(EmailRecipient recipient, Group group, Guid inviteToken, CancellationToken ct = default);
 
+    /// <summary>
+    /// Sends the link that lets one person set a new password. Sent in the product's name
+    /// rather than a group's: the account spans every group the person belongs to.
+    /// </summary>
+    /// <param name="resetToken">
+    /// The token the reset link is built from, assembled here for the same reason the invite
+    /// link is — the frontend's address stays known in one place.
+    /// </param>
+    Task SendPasswordResetAsync(EmailRecipient recipient, Guid resetToken, CancellationToken ct = default);
+
     // --- Savings
     /// <summary>To the group's admins: a deposit has been entered and needs checking.</summary>
     Task SendDepositRecordedAsync(IReadOnlyCollection<EmailRecipient> admins, Group group, Deposit deposit, Member depositor, CancellationToken ct = default);

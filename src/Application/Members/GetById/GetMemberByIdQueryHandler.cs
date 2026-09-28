@@ -41,6 +41,10 @@ internal sealed class GetMemberByIdQueryHandler(
                 0m,
                 m.PhoneNumber,
                 m.Address,
+                dbContext.Users
+                    .Where(u => u.Id == m.UserId)
+                    .Select(u => u.LastLoginAt)
+                    .FirstOrDefault(),
                 m.CreatedAt))
             .FirstOrDefaultAsync(cancellationToken);
 

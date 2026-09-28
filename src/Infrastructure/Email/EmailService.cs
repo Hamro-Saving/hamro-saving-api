@@ -34,6 +34,20 @@ internal sealed class EmailService(
             link: Absolute(EmailLinks.Signup(inviteToken)),
             ct: ct);
 
+    public Task SendPasswordResetAsync(EmailRecipient recipient, Guid resetToken, CancellationToken ct = default) =>
+        // Not via Deliver either: one named reader, and no group's books are involved.
+        SendOneAsync(
+            recipient,
+            SenderIdentity.Product,
+            subject: "Reset your password",
+            headline: "You asked to set a new password for your account.",
+            details: [],
+            footnote: "This link works once and expires in an hour. If you did not ask for it, "
+                + "ignore this email — your password has not been changed and nobody has been let in.",
+            actionLabel: "Set a new password",
+            link: Absolute(EmailLinks.ResetPassword(resetToken)),
+            ct: ct);
+
     // ------------------------------------------------------------------ Savings
 
     public Task SendDepositRecordedAsync(

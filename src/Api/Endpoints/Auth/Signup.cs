@@ -23,7 +23,8 @@ public sealed class SignupWithToken : IEndpoint
         })
         .WithTags("Auth")
         .WithSummary("Complete member signup using an invite token")
-        .AllowAnonymous();
+        .AllowAnonymous()
+        .RequireRateLimiting(RateLimitPolicies.AccountRecovery);
     }
 }
 
@@ -43,7 +44,8 @@ public sealed class GetSignupInfo : IEndpoint
         })
         .WithTags("Auth")
         .WithSummary("Get member info for a signup token (public)")
-        .AllowAnonymous();
+        .AllowAnonymous()
+        .RequireRateLimiting(RateLimitPolicies.AccountRecovery);
     }
 }
 

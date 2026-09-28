@@ -23,6 +23,7 @@ public sealed class Login : IEndpoint
         })
         .WithTags("Auth")
         .AllowAnonymous()
+        .RequireRateLimiting(RateLimitPolicies.SignIn)
         .WithSummary("Login and get a JWT token");
     }
 }

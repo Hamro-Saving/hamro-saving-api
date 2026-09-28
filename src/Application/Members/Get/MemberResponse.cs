@@ -23,4 +23,9 @@ public sealed record MemberResponse(
     decimal OutstandingInterest,
     string? PhoneNumber,
     string? Address,
+    /// <summary>
+    /// When this person last signed in, or null if they never have. Null also covers the
+    /// people who cannot: a member with no email was never given a login at all.
+    /// </summary>
+    DateTime? LastLoginAt,
     DateTime CreatedAt);

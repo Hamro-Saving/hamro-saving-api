@@ -1,4 +1,5 @@
 using HamroSavings.Api.Extensions;
+using HamroSavings.Api.Infrastructure;
 using HamroSavings.Application;
 using HamroSavings.Application.Abstractions.Authentication;
 using HamroSavings.Domain.Members;
@@ -17,6 +18,7 @@ builder.Services.AddOpenApiDocumentation(builder.Configuration);
 builder.Services.AddApplication(builder.Configuration);
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddPresentation();
+builder.Services.AddRateLimiting(builder.Configuration);
 builder.Services.AddEndpoints(Assembly.GetExecutingAssembly());
 
 // Two independent axes. SuperAdmin is about the platform and implies nothing about any group,
@@ -86,6 +88,10 @@ app.UseSerilogRequestLogging();
 app.UseCors();
 app.UseExceptionHandler();
 app.UseAuthentication();
+// After authentication on purpose: that is what puts the caller's identity on the context,
+// which lets a signed-in person be counted as themselves rather than as their address —
+// so one member cannot spend the budget of everyone else in the same office.
+app.UseRateLimiter();
 app.UseAuthorization();
 app.MapHealthChecks("/health");
 app.MapHealthChecks("/alive");

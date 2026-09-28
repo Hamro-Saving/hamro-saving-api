@@ -29,6 +29,8 @@ internal sealed class SignupWithTokenCommandHandler(
 
         var passwordHash = passwordHasher.Hash(command.Password);
         user.AcceptInvite(passwordHash);
+        // Signing up returns a token, so it is also the first sign-in.
+        user.RecordLogin();
 
         await dbContext.SaveChangesAsync(cancellationToken);
 

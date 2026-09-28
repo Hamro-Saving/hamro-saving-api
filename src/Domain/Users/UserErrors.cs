@@ -34,6 +34,17 @@ public static class UserErrors
     public static readonly Error InviteTokenExpired =
         Error.Problem("User.InviteTokenExpired", "The invite link has expired. Please ask your admin to resend the invite.");
 
+    public static readonly Error ResetAskedTooRecently =
+        Error.Problem(
+            "User.ResetAskedTooRecently",
+            "A password reset link was sent moments ago. Please use that one, or wait a little and ask again.");
+
+    public static readonly Error ResetTokenInvalid =
+        Error.Problem("User.ResetTokenInvalid", "The password reset link is invalid.");
+
+    public static readonly Error ResetTokenExpired =
+        Error.Problem("User.ResetTokenExpired", "The password reset link has expired. Please ask for a new one.");
+
     public static readonly Error AlreadyActivated =
         Error.Conflict("User.AlreadyActivated", "This account has already been activated.");
 }

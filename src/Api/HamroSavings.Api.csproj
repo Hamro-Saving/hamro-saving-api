@@ -15,6 +15,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- The rate limiting rules live here, and the tests that pin them live in
+         IntegrationTests, which is the only test project that references this assembly. -->
+    <InternalsVisibleTo Include="HamroSavings.IntegrationTests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Application\HamroSavings.Application.csproj" />
     <ProjectReference Include="..\Infrastructure\HamroSavings.Infrastructure.csproj" />
     <ProjectReference Include="..\SharedKernel\HamroSavings.SharedKernel.csproj" />

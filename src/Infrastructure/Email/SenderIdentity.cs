@@ -13,6 +13,13 @@ internal static class SenderIdentity
     private const int MaxSlugLength = 40;
 
     /// <summary>
+    /// The sender for the few emails that are about an account rather than a group's books.
+    /// A password reset is one: the reader may belong to several groups or, as a platform
+    /// admin, to none, so no group has standing to send it.
+    /// </summary>
+    public const string Product = "Saathi Bachat";
+
+    /// <summary>
     /// No fallback needed: a group's name is required by its validators and its column.
     ///
     /// It is admin-typed text shown as the sender. MimeKit quotes it, so it cannot forge a

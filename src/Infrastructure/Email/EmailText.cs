@@ -25,14 +25,17 @@ internal static class Footnotes
 }
 
 /// <summary>
-/// Only two, because only two emails ask the reader to do something: sign up, and vote on a
-/// loan. The rest report what happened, where a button would be furniture.
+/// Only the emails that ask the reader to do something carry a link: sign up, set a new
+/// password, and vote on a loan. The rest report what happened, where a button would be
+/// furniture.
 /// </summary>
 internal static class EmailLinks
 {
     public static string Loan(Guid loanId) => $"/loans/{loanId}";
 
     public static string Signup(Guid inviteToken) => $"/signup?token={inviteToken}";
+
+    public static string ResetPassword(Guid resetToken) => $"/reset-password?token={resetToken}";
 }
 
 /// <summary>In one place so every email describing a deposit agrees.</summary>

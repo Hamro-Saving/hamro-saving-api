@@ -3,6 +3,7 @@ using System;
 using HamroSavings.Infrastructure.Database;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace HamroSavings.Infrastructure.Database.Migrations
 {
     [DbContext(typeof(HamroSavingsDbContext))]
-    partial class HamroSavingsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260928093850_AddPasswordResetToken")]
+    partial class AddPasswordResetToken
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -799,18 +802,10 @@ namespace HamroSavings.Infrastructure.Database.Migrations
                         .HasDefaultValue(false)
                         .HasColumnName("is_super_admin");
 
-                    b.Property<DateTime?>("LastLoginAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("last_login_at");
-
                     b.Property<string>("PasswordHash")
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("password_hash");
-
-                    b.Property<DateTime?>("PasswordResetRequestedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("password_reset_requested_at");
 
                     b.Property<Guid?>("PasswordResetToken")
                         .HasColumnType("uuid")

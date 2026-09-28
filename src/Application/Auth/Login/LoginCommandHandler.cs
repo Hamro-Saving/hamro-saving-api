@@ -27,6 +27,9 @@ internal sealed class LoginCommandHandler(
         if (!passwordHasher.Verify(command.Password, user.PasswordHash))
             return Result.Failure<string>(UserErrors.InvalidCredentials);
 
+        user.RecordLogin();
+        await dbContext.SaveChangesAsync(cancellationToken);
+
         var memberships = await dbContext.LoadMembershipsAsync(user.Id, cancellationToken);
 
         // Only groups inside their validity window are offered; a person whose one group has

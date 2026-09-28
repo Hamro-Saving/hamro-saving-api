@@ -53,6 +53,12 @@ internal sealed class GetMembersQueryHandler(
                 0m,
                 m.PhoneNumber,
                 m.Address,
+                // Read off the login rather than the membership: one person signs in once
+                // for every group they belong to, so the visit belongs to the account.
+                dbContext.Users
+                    .Where(u => u.Id == m.UserId)
+                    .Select(u => u.LastLoginAt)
+                    .FirstOrDefault(),
                 m.CreatedAt))
             .ToListAsync(cancellationToken);
 
