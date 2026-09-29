@@ -77,5 +77,3 @@ dotnet_style_qualification_for_property = false:suggestion
 dotnet_style_qualification_for_method = false:suggestion
 dotnet_style_qualification_for_event = false:suggestion
 
-# IDE0008: Use explicit type
-dotnet_diagnostic.IDE0008.severity = none
