@@ -439,3 +439,9 @@ appsettings.Development.json
 
 # JetBrains Rider / IntelliJ
 .idea/
+
+# Local AI agent permission configs
+.claude/
+.codex/
+.gemini/
+.cursor/
