@@ -46,7 +46,9 @@ internal sealed class GetTransactionsQueryHandler(
         if (query.To.HasValue)
             entries = entries.Where(e => e.OccurredAt <= query.To.Value);
 
-        var pageSize = Math.Clamp(query.PageSize, 1, 200);
+        // Large enough for an export to fetch a typical group's year in one request, small
+        // enough that no single request can pull an unbounded history.
+        var pageSize = Math.Clamp(query.PageSize, 1, 1000);
 
         // Counted before paging, so the caller knows the size of the whole result.
         var total = await entries.CountAsync(cancellationToken);
